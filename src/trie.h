@@ -2,12 +2,13 @@
 #define _TRIE_H_
 
 #include <list>
-#include <ext/hash_map>
 #include <string>
 #include <memory>
 
 #include <stdlib.h>
 #include <unistd.h>
+
+#include <boost/unordered_map.hpp>
 
 using namespace std;
 
@@ -24,7 +25,8 @@ class TrieNode
 {
  public:
 
-  typedef __gnu_cxx::hash_map < char, TrieNode<T> *, __gnu_cxx::hash <char>, equal_char > trie_hash_t;
+  //typedef __gnu_cxx::hash_map < char, TrieNode<T> *, __gnu_cxx::hash <char>, equal_char > trie_hash_t;
+  typedef boost::unordered_map< char, TrieNode<T> * > trie_hash_t;
 
  public:
 

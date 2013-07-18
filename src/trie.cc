@@ -140,7 +140,7 @@ Trie<T>::put ( const string& key, const T& newval )
     lookup = node->get_child ( *s_iter );
     if (!lookup) {
       /* no child node with that character.  Add one */
-      node.add_child ( new_child = new TrieNode<T> ( *s_iter, newval ) );
+      node->add_child ( new_child = new TrieNode<T> ( *s_iter, newval ) );
       node = new_child;
     } else {
       node = lookup;
@@ -243,7 +243,8 @@ Trie<T>::get_longest_prefix ( const string& key, T& val ) const
   size_t rval;
   TrieNode<T>* node = NULL;
   
-  if (rval = get_longest_prefix_node ( key, node )) {
+  rval = get_longest_prefix_node ( key, node );
+  if (rval) {
     val = node->val_;
   }
   

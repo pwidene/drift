@@ -2,25 +2,34 @@
 #include <signal.h>
 
 #include <fstream>
+#include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+
+#if Boost_MINOR_VERSION > 53
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sources/logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
+#endif
+
 #include <boost/program_options.hpp>
 
+#include "evpath.h"
 
 using namespace std;
 
+#if Boost_MINOR_VERSION > 53
 namespace logging = boost::log;
+#endif
 namespace po = boost::program_options;
 
 po::options_description driftd_opts("Allowed options");
 
-CMCondition terminate_condition;
+int terminate_condition;
+CManager myCM;
 
 namespace {
   int shutdown = 0;
@@ -36,16 +45,19 @@ extern "C"
 void 
 close_handler( int signo ) 
 {
+#if Boost_MINOR_VERSION > 53
   BOOST_LOG(lg) << "Shutting down.";
-  
-  CMcondition_signal ( service.get_CM(), terminate_condition );
+#endif
+  CMCondition_signal ( myCM, terminate_condition );
 }
 
 extern "C"
 void 
 timer_handler( int signo ) 
 {
+#if Boost_MINOR_VERSION > 53
   BOOST_LOG(lg) << "Timer interrupt received.";
+#endif
   //service.get_peer_load();
   //alarm(100);
   return;
@@ -69,9 +81,9 @@ main (int argc , char *argv[])
   /* 
    * Initialize the server network and setup all the message handlers 
    */
-  service.init_network();
+  //service.init_network();
 
-  terminate_condition = CMCondition_get ( service.get_CM(), NULL );
+  terminate_condition = CMCondition_get ( myCM, NULL );
 
   new_action.sa_handler = close_handler;
   sigemptyset(&new_action.sa_mask);
@@ -84,7 +96,7 @@ main (int argc , char *argv[])
   if (old_action.sa_handler != SIG_IGN)
     sigaction(SIGTERM,&new_action,NULL);
   
-  if (args_info.bootstrap_given) {
+  if (opts_vm["bootstrap"].as<bool>()) {
     struct sigaction old_timer, new_timer;
     
     new_timer.sa_handler = timer_handler;
@@ -93,10 +105,12 @@ main (int argc , char *argv[])
     if(old_timer.sa_handler != SIG_IGN)
       sigaction(SIGALRM, &new_timer, NULL);
   }
-  
+
+#if Boost_MINOR_VERSION > 53  
   BOOST_LOG(lg) << "Forking comm thread, ready to provide services.";
-  CMfork_comm_thread (service.get_CM());
-  CMCondition_wait ( service.get_CM(), terminate_condition );
+#endif
+  CMfork_comm_thread (myCM);
+  CMCondition_wait ( myCM, terminate_condition );
   
   return 0;
 }
