@@ -1,9 +1,3 @@
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} )
-
-find_package( Boost COMPONENTS program_options signals system timer )
-
-include_directories( ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
-link_directories( ${CERCS_PREFIX}/lib )
 
 # FIND_CERCS_PROJECT (cercs_env LIBRARY cercs_env INCLUDES cercs_env.h REQUIRED ${CERCS_FIND_OPTIONS})
 # FIND_CERCS_PROJECT (atl LIBRARY atl INCLUDES atl.h REQUIRED ${CERCS_FIND_OPTIONS})
@@ -18,5 +12,5 @@ set (CERCS_LIB_LIST evpath ffs dill gen_thread atl cercs_env)
 
 add_library(drift SHARED ${LIBDRIFT_SRC_LIST})
 
-add_executable(driftd driftd.cc)
+add_executable(driftd driftd.cc formats.cc)
 target_link_libraries(driftd drift ${CERCS_LIB_LIST} ${Boost_LIBRARIES})

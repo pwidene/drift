@@ -1,32 +1,17 @@
 #include <iostream>
+#include <fstream>
 
 #include <boost/program_options.hpp>
 
-#include "cercs_env.h"
-#include "ffs.h"
-#include "attr.h"
-#include "gen_thread.h"
 #include "evpath.h"
+
+#include "../src/formats.h"
 
 using namespace std;
 using namespace boost;
 
 CManager cm;
 
-namespace drift {
-
-  typedef struct _heartbeat_ptr {
-    unsigned long ts;
-    unsigned long flags;
-  } heartbeat, *heartbeat_ptr;
-
-  FMField heartbeat_field_list[] =
-    {
-      {"ts", "integer", sizeof(long), FMOffset(heartbeat_ptr, ts)},
-      {"flags", "integer", sizeof(long), FMOffset(heartbeat_ptr, flags)},
-      {NULL, NULL, 0, 0}
-    };
-}
 
 static
 int
@@ -53,25 +38,35 @@ main( int argc, char* argv[] )
     ("init-network,n", "Initialize network")
     ("bootstrap,b", "Bootstrap network")
     ("contact-string,c", po::value<string>(), "Network contact string")
+    ("hostname,h", po::value<string>()->default_value("localhost"), "Server hostname")
+    ("port,p", po::value<int>()->default_value(44999), "Server port")
     ;
   po::variables_map opts_vm;
   po::store( po::parse_command_line( argc, argv, ping_opts ), opts_vm );
-  po::notify( opts_vm );
+
+  ifstream ifs("drift.cfg");
+  if (ifs) {
+    po::store( po::parse_config_file( ifs, ping_opts ), opts_vm );
+    po::notify( opts_vm );
+  }
 
   gen_pthread_init();
   cm = CManager_create();
 
-  attr_list contact_list;
-  contact_list = create_attr_list();
+  attr_list contact_list = create_attr_list();
+  static atom_t CM_HOSTNAME = attr_atom_from_string("IP_HOST");
+  static atom_t CM_PORT = attr_atom_from_string("IP_PORT");
+  add_attr ( contact_list, CM_HOSTNAME, Attr_String, (attr_value) opts_vm["hostname"].as<string>() );
+  add_attr ( contact_list, CM_PORT, Attr_Int4, (attr_value) opts_vm["port"].as<int>() );
 
   EVstone in_stone;
   in_stone = EValloc_stone( cm );
-  EVassoc_terminal_action( cm, stone, ping_handler, NULL );
+  EVassoc_terminal_action( cm, in_stone, ping_handler, NULL );
 
   EVsource source_handle;
   int out_stone, remote_stone;
   out_stone = EValloc_stone( cm );
-  EVassoc_bridge_action( cm, stone, contact_list, remote_stone );
+  EVassoc_bridge_action( cm, out_stone, contact_list, remote_stone );
   source_handle = EVcreate_submit_handle( cm, out_stone, drift::heartbeat_field_list );
 
   /* TODO fix up contact list from prefs for server, generate mine for response */

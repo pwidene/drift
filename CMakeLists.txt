@@ -16,8 +16,18 @@ include(CheckStructHasMember)
 include(CreateLibtoolFile)
 include(FindCERCSProject)
 
+
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} )
+
+find_package( Boost COMPONENTS program_options signals system timer )
+
+include_directories( ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
+link_directories( ${CERCS_PREFIX}/lib )
+
+
 add_subdirectory( src )
 add_subdirectory( doc )
+add_subdirectory( tests )
 
 # display status message for important variables
 MESSAGE( STATUS )
