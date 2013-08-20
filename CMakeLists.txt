@@ -23,7 +23,7 @@ find_package( Boost COMPONENTS program_options signals system timer )
 
 include_directories( ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
 link_directories( ${CERCS_PREFIX}/lib )
-
+set (CERCS_LIB_LIST evpath ffs dill gen_thread atl cercs_env)
 
 add_subdirectory( src )
 add_subdirectory( doc )

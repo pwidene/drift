@@ -8,9 +8,10 @@
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h )
 
 set (LIBDRIFT_SRC_LIST trie.cc)
-set (CERCS_LIB_LIST evpath ffs dill gen_thread atl cercs_env)
+set (LIBDRIFTF_SRC_LIST formats.cc)
 
 add_library(drift SHARED ${LIBDRIFT_SRC_LIST})
+add_library(driftf SHARED ${LIBDRIFTF_SRC_LIST})
 
-add_executable(driftd driftd.cc formats.cc)
-target_link_libraries(driftd drift ${CERCS_LIB_LIST} ${Boost_LIBRARIES})
+add_executable(driftd driftd.cc)
+target_link_libraries(driftd drift driftf ${CERCS_LIB_LIST} ${Boost_LIBRARIES})

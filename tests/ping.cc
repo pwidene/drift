@@ -3,7 +3,11 @@
 
 #include <boost/program_options.hpp>
 
+extern "C" {
 #include "evpath.h"
+#include "atl.h"
+#include "gen_thread.h"
+}
 
 #include "../src/formats.h"
 
@@ -56,18 +60,17 @@ main( int argc, char* argv[] )
   attr_list contact_list = create_attr_list();
   static atom_t CM_HOSTNAME = attr_atom_from_string("IP_HOST");
   static atom_t CM_PORT = attr_atom_from_string("IP_PORT");
-  add_attr ( contact_list, CM_HOSTNAME, Attr_String, (attr_value) opts_vm["hostname"].as<string>() );
+  add_attr ( contact_list, CM_HOSTNAME, Attr_String, (attr_value) opts_vm["hostname"].as<char*>() );
   add_attr ( contact_list, CM_PORT, Attr_Int4, (attr_value) opts_vm["port"].as<int>() );
 
   EVstone in_stone;
-  in_stone = EValloc_stone( cm );
-  EVassoc_terminal_action( cm, in_stone, ping_handler, NULL );
+  in_stone = EVcreate_terminal_action( cm, drift::heartbeat_format_list, ping_handler, NULL );
 
   EVsource source_handle;
   int out_stone, remote_stone;
   out_stone = EValloc_stone( cm );
   EVassoc_bridge_action( cm, out_stone, contact_list, remote_stone );
-  source_handle = EVcreate_submit_handle( cm, out_stone, drift::heartbeat_field_list );
+  source_handle = EVcreate_submit_handle( cm, out_stone, drift::heartbeat_format_list );
 
   /* TODO fix up contact list from prefs for server, generate mine for response */
 

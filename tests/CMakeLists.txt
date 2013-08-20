@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(BEFORE ${drift_BINARY_DIR} ${drift_SOURCE_DIR} ${CMAKE_CURRE
 
 foreach (TEST ${TESTS} )
     ADD_EXECUTABLE(${TEST} ${TEST}.cc)
-    TARGET_LINK_LIBRARIES(${TEST} drift ${BASE_LIBS})
+    TARGET_LINK_LIBRARIES(${TEST} drift driftf ${CERCS_LIB_LIST} ${Boost_LIBRARIES})
 #    ADD_TEST(${TEST} "${TEST}")
 endforeach()
 

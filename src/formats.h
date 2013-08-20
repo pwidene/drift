@@ -8,7 +8,8 @@ namespace drift {
     unsigned long flags;
   } heartbeat, *heartbeat_ptr;
 
-extern FMField heartbeat_field_list[];
+  extern FMField heartbeat_field_list[];
+  extern FMStructDescRec heartbeat_format_list[];
 
 }
 
