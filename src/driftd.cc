@@ -17,6 +17,7 @@
 
 #include <boost/program_options.hpp>
 
+#include "gen_thread.h"
 #include "evpath.h"
 
 using namespace std;
@@ -70,8 +71,8 @@ main (int argc , char *argv[])
   int bootstrap_node = 0;
 
   driftd_opts.add_options()
-    ("init-network,n", "Initialize network")
-    ("bootstrap,b", "Bootstrap network")
+    ("init-network,n", po::value<bool>()->default_value(true), "Initialize network")
+    ("bootstrap,b", po::value<bool>()->default_value(true), "Bootstrap network")
     ("contact-string,c", po::value<string>(), "Network contact string")
     ;
   po::variables_map opts_vm;
@@ -82,6 +83,8 @@ main (int argc , char *argv[])
    * Initialize the server network and setup all the message handlers 
    */
   //service.init_network();
+  gen_pthread_init();
+  myCM = CManager_create();
 
   terminate_condition = CMCondition_get ( myCM, NULL );
 
@@ -109,6 +112,8 @@ main (int argc , char *argv[])
 #if Boost_MINOR_VERSION > 53  
   BOOST_LOG(lg) << "Forking comm thread, ready to provide services.";
 #endif
+
+  CMlisten(myCM);
   CMfork_comm_thread (myCM);
   CMCondition_wait ( myCM, terminate_condition );
   

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set (TESTS ping)
-#set (NO_INST_PROGS ping)
+set (NO_INST_PROGS ping)
 
 ENABLE_TESTING()
 
