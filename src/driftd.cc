@@ -76,7 +76,17 @@ main (int argc , char *argv[])
     ("contact-string,c", po::value<string>(), "Network contact string")
     ;
   po::variables_map opts_vm;
-  po::store( po::parse_command_line( argc, argv, driftd_opts ), opts_vm );
+  try {
+    po::store( po::parse_command_line( argc, argv, driftd_opts ), opts_vm );
+  }
+  catch( po::unknown_option& uo ) {
+    cerr << argv[0] << ": " << uo.what() << endl;
+  }
+  catch ( exception& e ) {
+    cerr << argv[0] << ": " << e.what() << endl;
+  }
+  catch (...) { cerr << argv[0] << ": unknown parsing error" << endl; }
+
   po::notify( opts_vm );
     
   /* 
