@@ -17,7 +17,6 @@
 
 #include <boost/program_options.hpp>
 
-#include "gen_thread.h"
 #include "evpath.h"
 
 using namespace std;
@@ -93,7 +92,6 @@ main (int argc , char *argv[])
    * Initialize the server network and setup all the message handlers 
    */
   //service.init_network();
-  gen_pthread_init();
   myCM = CManager_create();
 
   terminate_condition = CMCondition_get ( myCM, NULL );
