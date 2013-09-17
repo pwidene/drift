@@ -6,7 +6,6 @@
 extern "C" {
 #include "evpath.h"
 #include "atl.h"
-#include "gen_thread.h"
 }
 
 #include "../src/formats.h"
@@ -54,7 +53,6 @@ main( int argc, char* argv[] )
     po::notify( opts_vm );
   }
 
-  gen_pthread_init();
   cm = CManager_create();
 
   attr_list contact_list = create_attr_list();
