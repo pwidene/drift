@@ -13,6 +13,10 @@ set( CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib" )
 set( CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE )
 set( CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib" )
 
+if( NOT CERCS_PREFIX )
+  MESSAGE( STATUS "CERCS_PREFIX not set, using CMAKE_INSTALL_PREFIX" )
+  set( CERCS_PREFIX ${CMAKE_INSTALL_PREFIX} )
+endif()
 
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
@@ -38,6 +42,7 @@ add_subdirectory( tests )
 # display status message for important variables
 MESSAGE( STATUS )
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
+MESSAGE( STATUS "CERCS_PREFIX = ${CERCS_PREFIX}" )
 MESSAGE( STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}" )
 MESSAGE( STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}  (options are: Debug,Release,RelWithDebInfo,MinSizeRel)")
 MESSAGE( STATUS "Change a value with: cmake -D<Variable>=<Value>" )
