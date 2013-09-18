@@ -6,27 +6,29 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-#if Boost_MINOR_VERSION > 53
+#define BOOST_ALL_DYN_LINK 1
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sources/logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
-#endif
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/log/utility/string_literal.hpp>
 
 #include "evpath.h"
 
 using namespace std;
 
-#if Boost_MINOR_VERSION > 53
 namespace logging = boost::log;
-#endif
 namespace po = boost::program_options;
 
 po::options_description driftd_opts("Allowed options");
+logging::sources::logger lg;
 
 int terminate_condition;
 CManager myCM;
@@ -45,9 +47,7 @@ extern "C"
 void 
 close_handler( int signo ) 
 {
-#if Boost_MINOR_VERSION > 53
   BOOST_LOG(lg) << "Shutting down.";
-#endif
   CMCondition_signal ( myCM, terminate_condition );
 }
 
@@ -55,9 +55,8 @@ extern "C"
 void 
 timer_handler( int signo ) 
 {
-#if Boost_MINOR_VERSION > 53
   BOOST_LOG(lg) << "Timer interrupt received.";
-#endif
+
   //service.get_peer_load();
   //alarm(100);
   return;
@@ -68,6 +67,15 @@ main (int argc , char *argv[])
 {
   struct sigaction new_action, old_action;
   int bootstrap_node = 0;
+
+  /*
+   *  Start logging services
+   */
+  boost::shared_ptr< logging::sinks::synchronous_sink< logging::sinks::text_ostream_backend > > sink =
+    logging::add_console_log();
+
+  sink->locked_backend()->auto_flush(true);
+  logging::add_common_attributes();
 
   driftd_opts.add_options()
     ("init-network,n", po::value<bool>()->default_value(true), "Initialize network")
@@ -117,9 +125,7 @@ main (int argc , char *argv[])
       sigaction(SIGALRM, &new_timer, NULL);
   }
 
-#if Boost_MINOR_VERSION > 53  
   BOOST_LOG(lg) << "Forking comm thread, ready to provide services.";
-#endif
 
   CMlisten(myCM);
   CMfork_comm_thread (myCM);

@@ -16,4 +16,7 @@ add_library(driftf SHARED ${LIBDRIFTF_SRC_LIST})
 add_executable(driftd driftd.cc)
 target_link_libraries(driftd drift driftf ${CERCS_LIB_LIST} ${Boost_LIBRARIES})
 set_target_properties( driftd PROPERTIES RPATH_MACOSX TRUE )
-install(TARGETS driftd RUNTIME DESTINATION bin)
+install(TARGETS driftd drift driftf 
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib)
