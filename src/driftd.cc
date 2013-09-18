@@ -6,7 +6,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-#define BOOST_ALL_DYN_LINK 1
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
