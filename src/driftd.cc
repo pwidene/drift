@@ -19,6 +19,7 @@
 #include <boost/program_options.hpp>
 #include <boost/log/utility/string_literal.hpp>
 
+#include "atl.h"
 #include "evpath.h"
 
 using namespace std;
@@ -36,11 +37,41 @@ namespace {
   int shutdown = 0;
 };
 
+
+typedef struct {
+  EVstone control_stone;
+  EVstone split_stone;
+  EVaction split_action;
+  atom_t remote_stone_atom;
+  atom_t remote_contact_atom;
+} heartbeat_control_info;
+
+
+
 void 
 usage(char* prog)
 {
   cout << driftd_opts;
 }
+
+static int
+heartbeat_handler ( CManager cm, void *vevent, void *client_data, attr_list attrs )
+{
+  EVstone remote_stone;
+  char *clist_str;
+  drift::heartbeat_ptr = reinterpret_cast<drift::heartbeat_ptr>(vevent);
+
+  static atom_t D_STONE = attr_atom_from_string("D_STONE");
+  static atom_t D_CONTACT_LIST = attr_atom_from_string("D_CONTACT_LIST");
+
+  get_int_attr ( attrs, D_STONE, &remote_stone );
+  get_string_attr ( attrs, D_CONTACT_LIST, &clist_str );
+
+  EVassoc_bridge_action ( myCM, EValloc_stone(myCM), attr_list_from_string(clist_str), remote_stone );
+  EVaction_add_split_target ( myCM, 
+  return 1;
+}
+
 
 extern "C"
 void 
@@ -55,7 +86,7 @@ void
 timer_handler( int signo ) 
 {
   BOOST_LOG(lg) << "Timer interrupt received.";
-
+  
   //service.get_peer_load();
   //alarm(100);
   return;
@@ -64,6 +95,8 @@ timer_handler( int signo )
 int 
 main (int argc , char *argv[]) 
 {
+  attr_list listen_info;
+  
   struct sigaction new_action, old_action;
   int bootstrap_node = 0;
 
@@ -126,7 +159,22 @@ main (int argc , char *argv[])
 
   BOOST_LOG(lg) << "Forking comm thread, ready to provide services.";
 
-  CMlisten(myCM);
+  /*
+   *  control listener on port 44999 
+   */
+  heartbeat_control_info *hci = calloc(1, sizeof(heartbeat_control_info));
+
+  hci->control_stone = EValloc_stone(myCM);
+  hci->split_stone = EValloc_stone(myCM);
+  hci->split_action = EVassoc_split_action ( myCM, hci->split_stone, NULL );
+
+  EVassoc_terminal_action ( myCM, hci->control_stone, drift::heartbeat_format_list, heartbeat_handler, hci );
+  
+  listen_info = create_attr_list();
+  static atom_t CM_IP_PORT = attr_atom_from_string("IP_PORT");
+  add_attr ( listen_info, CM_IP_PORT, Attr_Int4, reinterpret_cast<attr_value>(44999) );
+  CMlisten_specific ( myCM, listen_info );
+
   CMfork_comm_thread (myCM);
   CMCondition_wait ( myCM, terminate_condition );
   

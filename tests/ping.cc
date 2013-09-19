@@ -58,14 +58,20 @@ main( int argc, char* argv[] )
   attr_list contact_list = create_attr_list();
   static atom_t CM_HOSTNAME = attr_atom_from_string("IP_HOST");
   static atom_t CM_PORT = attr_atom_from_string("IP_PORT");
-  add_attr ( contact_list, CM_HOSTNAME, Attr_String, (attr_value) opts_vm["hostname"].as<char*>() );
-  add_attr ( contact_list, CM_PORT, Attr_Int4, (attr_value) opts_vm["port"].as<int>() );
+
+  static atom_t D_STONE = attr_atom_from_string("D_STONE");
+  static atom_t D_CONTACT_LIST = attr_atom_from_string("D_CONTACT_LIST");
+
+  string host_str = opts_vm["hostname"].as<string>();
+  int port = opts_vm["port"].as<int>();
+  add_attr ( contact_list, CM_HOSTNAME, Attr_String, reinterpret_cast<attr_value>(const_cast<char*>(host_str.c_str())) );
+  add_attr ( contact_list, CM_PORT, Attr_Int4, reinterpret_cast<attr_value>(port) );
 
   EVstone in_stone;
   in_stone = EVcreate_terminal_action( cm, drift::heartbeat_format_list, ping_handler, NULL );
 
   EVsource source_handle;
-  int out_stone, remote_stone;
+  int out_stone, remote_stone = 0;
   out_stone = EValloc_stone( cm );
   EVassoc_bridge_action( cm, out_stone, contact_list, remote_stone );
   source_handle = EVcreate_submit_handle( cm, out_stone, drift::heartbeat_format_list );
@@ -73,9 +79,14 @@ main( int argc, char* argv[] )
   /* TODO fix up contact list from prefs for server, generate mine for response */
 
   attr_list out_attrs = create_attr_list();
+
   drift::heartbeat hb;
   hb.ts = 0;
   hb.flags |= 16;
+
+  add_attr ( out_attrs, D_STONE, Attr_Int4, in_stone );
+  add_attr ( out_attrs, D_CONTACT_LIST, Attr_String, attr_list_to_string ( CMget_contact_list(myCM) ) );
+
   EVsubmit( source_handle, &hb, out_attrs );
   CMrun_network( cm );
   
