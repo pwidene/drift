@@ -1,7 +1,7 @@
 #ifndef _FORMATS_H_
 #define _FORMATS_H_
 
-namespace drift {
+namespace drift {  
 
   typedef struct _heartbeat_ptr {
     unsigned long ts;

@@ -1,28 +1,42 @@
 #include <unistd.h>
 #include <signal.h>
+#include <sys/time.h>
 
 #include <fstream>
 #include <iostream>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/utility/setup/console.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
+#include "boost/shared_ptr.hpp"
+#include "boost/make_shared.hpp"
+#include "boost/log/core.hpp"
+#include "boost/log/trivial.hpp"
+#include "boost/log/sinks/sync_frontend.hpp"
+#include "boost/log/sinks/text_ostream_backend.hpp"
+#include "boost/log/sources/logger.hpp"
+#include "boost/log/sources/record_ostream.hpp"
+#include "boost/log/utility/setup/console.hpp"
+#include "boost/log/utility/setup/file.hpp"
+#include "boost/log/utility/setup/common_attributes.hpp"
 
-#include <boost/program_options.hpp>
-#include <boost/log/utility/string_literal.hpp>
+#include "boost/program_options.hpp"
+#include "boost/log/utility/string_literal.hpp"
+#include "boost/chrono/system_clocks.hpp"
 
 #include "atl.h"
 #include "evpath.h"
 
+#include "formats.h"
+
 using namespace std;
+
+typedef struct {
+  EVstone control_stone;
+  EVstone split_stone;
+  EVaction split_action;
+  EVsource source;
+  atom_t remote_stone_atom;
+  atom_t remote_contact_atom;
+} heartbeat_control_info;
+
 
 namespace logging = boost::log;
 namespace po = boost::program_options;
@@ -38,16 +52,6 @@ namespace {
 };
 
 
-typedef struct {
-  EVstone control_stone;
-  EVstone split_stone;
-  EVaction split_action;
-  atom_t remote_stone_atom;
-  atom_t remote_contact_atom;
-} heartbeat_control_info;
-
-
-
 void 
 usage(char* prog)
 {
@@ -57,18 +61,18 @@ usage(char* prog)
 static int
 heartbeat_handler ( CManager cm, void *vevent, void *client_data, attr_list attrs )
 {
-  EVstone remote_stone;
+  EVstone remote_stone, new_bridge;
   char *clist_str;
-  drift::heartbeat_ptr = reinterpret_cast<drift::heartbeat_ptr>(vevent);
+  
+  drift::heartbeat_ptr hbp = reinterpret_cast<drift::heartbeat_ptr>(vevent);
+  heartbeat_control_info *hci = reinterpret_cast<heartbeat_control_info*>(client_data);
+  
+  get_int_attr ( attrs, hci->remote_stone_atom, &remote_stone );
+  get_string_attr ( attrs, hci->remote_contact_atom, &clist_str );
 
-  static atom_t D_STONE = attr_atom_from_string("D_STONE");
-  static atom_t D_CONTACT_LIST = attr_atom_from_string("D_CONTACT_LIST");
-
-  get_int_attr ( attrs, D_STONE, &remote_stone );
-  get_string_attr ( attrs, D_CONTACT_LIST, &clist_str );
-
-  EVassoc_bridge_action ( myCM, EValloc_stone(myCM), attr_list_from_string(clist_str), remote_stone );
-  EVaction_add_split_target ( myCM, 
+  new_bridge = EValloc_stone(myCM);
+  EVassoc_bridge_action ( myCM, new_bridge, attr_list_from_string(clist_str), remote_stone );
+  EVaction_add_split_target ( myCM, hci->split_stone, hci->split_action, new_bridge );
   return 1;
 }
 
@@ -83,12 +87,20 @@ close_handler( int signo )
 
 extern "C"
 void 
-timer_handler( int signo ) 
+submit_heartbeat ( CManager cm, void *cdata )
 {
-  BOOST_LOG(lg) << "Timer interrupt received.";
-  
-  //service.get_peer_load();
-  //alarm(100);
+
+  heartbeat_control_info *hci = reinterpret_cast<heartbeat_control_info*>(cdata);
+  time_t ticks = boost::chrono::system_clock::to_time_t ( boost::chrono::system_clock::now() );
+
+  drift::heartbeat hb;
+  hb.ts = ticks;
+  hb.flags = 0;
+
+  EVsubmit ( source, &hb, NULL );
+
+  BOOST_LOG(lg) << "Heartbeat submission" << endl;
+
   return;
 }
 
@@ -131,11 +143,11 @@ main (int argc , char *argv[])
   /* 
    * Initialize the server network and setup all the message handlers 
    */
-  //service.init_network();
   myCM = CManager_create();
 
   terminate_condition = CMCondition_get ( myCM, NULL );
 
+  /* Catch SIGINT, SIGTERM */  
   new_action.sa_handler = close_handler;
   sigemptyset(&new_action.sa_mask);
   
@@ -147,34 +159,34 @@ main (int argc , char *argv[])
   if (old_action.sa_handler != SIG_IGN)
     sigaction(SIGTERM,&new_action,NULL);
   
-  if (opts_vm["bootstrap"].as<bool>()) {
-    struct sigaction old_timer, new_timer;
-    
-    new_timer.sa_handler = timer_handler;
-    sigemptyset(&new_timer.sa_mask);
-    sigaction(SIGALRM, NULL, &old_timer);
-    if(old_timer.sa_handler != SIG_IGN)
-      sigaction(SIGALRM, &new_timer, NULL);
-  }
-
   BOOST_LOG(lg) << "Forking comm thread, ready to provide services.";
 
   /*
    *  control listener on port 44999 
    */
-  heartbeat_control_info *hci = calloc(1, sizeof(heartbeat_control_info));
+  heartbeat_control_info *hci = reinterpret_cast<heartbeat_control_info*>(calloc(1, sizeof(heartbeat_control_info)));
 
   hci->control_stone = EValloc_stone(myCM);
   hci->split_stone = EValloc_stone(myCM);
   hci->split_action = EVassoc_split_action ( myCM, hci->split_stone, NULL );
+  hci->remote_stone_atom = attr_atom_from_string("D_STONE");
+  hci->remote_contact_atom = attr_atom_from_string("D_CONTACT_LIST");
+  hci->source = EVcreate_submit_handle ( myCM, hci->split_stone, drift::heartbeat_format_list );
 
   EVassoc_terminal_action ( myCM, hci->control_stone, drift::heartbeat_format_list, heartbeat_handler, hci );
-  
+
+  /* 
+   *  CM periodic task for heartbeat
+   */
+  CMadd_periodic_task ( myCM, 2, 0, submit_heartbeat, hci );
+
+  /*
+   *  Set up transport listener, fork comm thread, and wait to die
+   */  
   listen_info = create_attr_list();
   static atom_t CM_IP_PORT = attr_atom_from_string("IP_PORT");
   add_attr ( listen_info, CM_IP_PORT, Attr_Int4, reinterpret_cast<attr_value>(44999) );
   CMlisten_specific ( myCM, listen_info );
-
   CMfork_comm_thread (myCM);
   CMCondition_wait ( myCM, terminate_condition );
   

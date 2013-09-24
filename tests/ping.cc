@@ -84,8 +84,8 @@ main( int argc, char* argv[] )
   hb.ts = 0;
   hb.flags |= 16;
 
-  add_attr ( out_attrs, D_STONE, Attr_Int4, in_stone );
-  add_attr ( out_attrs, D_CONTACT_LIST, Attr_String, attr_list_to_string ( CMget_contact_list(myCM) ) );
+  add_attr ( out_attrs, D_STONE, Attr_Int4, reinterpret_cast<attr_value>(in_stone) );
+  add_attr ( out_attrs, D_CONTACT_LIST, Attr_String, attr_list_to_string ( CMget_contact_list(cm) ) );
 
   EVsubmit( source_handle, &hb, out_attrs );
   CMrun_network( cm );
