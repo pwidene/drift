@@ -7,6 +7,8 @@
 
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h )
 
+include_directories( ${MONGO_INCLUDE_DIR} )
+
 set (LIBDRIFT_SRC_LIST trie.cc)
 set (LIBDRIFTF_SRC_LIST formats.cc)
 
@@ -14,7 +16,7 @@ add_library(drift SHARED ${LIBDRIFT_SRC_LIST})
 add_library(driftf SHARED ${LIBDRIFTF_SRC_LIST})
 
 add_executable(driftd driftd.cc)
-target_link_libraries(driftd drift driftf ${CERCS_LIB_LIST} ${Boost_LIBRARIES})
+target_link_libraries(driftd drift driftf ${CERCS_LIB_LIST} ${Boost_LIBRARIES} ${MONGO_LIBRARIES})
 set_target_properties( driftd PROPERTIES RPATH_MACOSX TRUE )
 install(TARGETS driftd drift driftf 
   RUNTIME DESTINATION bin

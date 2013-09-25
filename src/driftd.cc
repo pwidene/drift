@@ -21,6 +21,8 @@
 #include "boost/log/utility/string_literal.hpp"
 #include "boost/chrono/system_clocks.hpp"
 
+#include "mongo/client/dbclient.h"
+
 #include "atl.h"
 #include "evpath.h"
 

@@ -18,6 +18,11 @@ if( NOT CERCS_PREFIX )
   set( CERCS_PREFIX ${CMAKE_INSTALL_PREFIX} )
 endif()
 
+if( NOT MONGOROOT )
+  MESSAGE( STATUS "MONGOROOT not set, using CMAKE_INSTALL_PREFIX (${CMAKE_INSTALL_PREFIX})" )
+  set( MONGOROOT ${CMAKE_INSTALL_PREFIX} )
+endif()
+
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
@@ -30,6 +35,7 @@ add_definitions(-DBOOST_ALL_DYN_LINK)
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} )
 
 find_package( Boost COMPONENTS thread program_options signals system timer log log_setup chrono )
+find_package( MongoDB )
 
 include_directories( ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
 link_directories( ${CERCS_PREFIX}/lib )
