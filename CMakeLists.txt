@@ -29,7 +29,7 @@ include(FindCERCSProject)
 add_definitions(-DBOOST_ALL_DYN_LINK)
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} )
 
-find_package( Boost COMPONENTS thread program_options signals system timer log log_setup )
+find_package( Boost COMPONENTS thread program_options signals system timer log log_setup chrono )
 
 include_directories( ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
 link_directories( ${CERCS_PREFIX}/lib )

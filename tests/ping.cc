@@ -14,7 +14,7 @@ using namespace std;
 using namespace boost;
 
 CManager cm;
-
+int terminate_condition;
 
 static
 int
@@ -22,8 +22,8 @@ ping_handler( CManager cm, void* vevent, void* cdata, attr_list attrs )
 {
   drift::heartbeat_ptr event = static_cast< drift::heartbeat_ptr > ( vevent );
 
-  cout << "Heartbeat received, timestamp " << event->ts;
-  CManager_close( cm );
+  cout << "Heartbeat received, timestamp " << event->ts << endl;
+  CMCondition_signal ( cm, terminate_condition );
   return 0;
 }
 
@@ -54,6 +54,8 @@ main( int argc, char* argv[] )
   }
 
   cm = CManager_create();
+  CMCondition_get ( cm, NULL );
+  CMlisten(cm);
 
   attr_list contact_list = create_attr_list();
   static atom_t CM_HOSTNAME = attr_atom_from_string("IP_HOST");
@@ -76,19 +78,19 @@ main( int argc, char* argv[] )
   EVassoc_bridge_action( cm, out_stone, contact_list, remote_stone );
   source_handle = EVcreate_submit_handle( cm, out_stone, drift::heartbeat_format_list );
 
-  /* TODO fix up contact list from prefs for server, generate mine for response */
-
-  attr_list out_attrs = create_attr_list();
-
   drift::heartbeat hb;
   hb.ts = 0;
   hb.flags |= 16;
 
+  attr_list out_attrs = create_attr_list();
   add_attr ( out_attrs, D_STONE, Attr_Int4, reinterpret_cast<attr_value>(in_stone) );
   add_attr ( out_attrs, D_CONTACT_LIST, Attr_String, attr_list_to_string ( CMget_contact_list(cm) ) );
 
   EVsubmit( source_handle, &hb, out_attrs );
-  CMrun_network( cm );
+  CMfork_comm_thread ( cm );
+  CMCondition_wait ( cm, terminate_condition );
+
+  CManager_close ( cm );
   
   free_attr_list( out_attrs );
   return 1;

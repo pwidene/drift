@@ -97,7 +97,7 @@ submit_heartbeat ( CManager cm, void *cdata )
   hb.ts = ticks;
   hb.flags = 0;
 
-  EVsubmit ( source, &hb, NULL );
+  EVsubmit ( hci->source, &hb, NULL );
 
   BOOST_LOG(lg) << "Heartbeat submission" << endl;
 
