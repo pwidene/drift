@@ -27,14 +27,10 @@ using namespace std;
 namespace po = boost::program_options;
 
 po::options_description driftd_opts("Allowed options");
-logging::sources::logger lg;
+logging::sources::severity_logger<drift::severity_level> lg(boost::log::keywords::severity = drift::debug);
 
 int terminate_condition;
 CManager myCM;
-
-namespace {
-  int shutdown = 0;
-};
 
 
 void 
@@ -49,7 +45,7 @@ extern "C"
 void 
 close_handler( int signo ) 
 {
-  BOOST_LOG(lg) << "Shutting down.";
+  BOOST_LOG_SEV(lg, drift::info) << "Shutting down.";
   CMCondition_signal ( myCM, terminate_condition );
 }
 
@@ -71,10 +67,15 @@ main (int argc , char *argv[])
   sink->locked_backend()->auto_flush(true);
   logging::add_common_attributes();
 
+  
+  /*
+   *  Get the command-line and/or config file options
+   */
   driftd_opts.add_options()
     ("init-network,n", po::value<bool>()->default_value(true), "Initialize network")
     ("bootstrap,b", po::value<bool>()->default_value(true), "Bootstrap network")
     ("contact-string,c", po::value<string>(), "Network contact string")
+    ("help,h", po::value<bool>()->default_value(false), "Display options help")
     ;
   po::variables_map opts_vm;
   try {
@@ -120,7 +121,7 @@ main (int argc , char *argv[])
   add_attr ( listen_info, CM_IP_PORT, Attr_Int4, reinterpret_cast<attr_value>(44999) );
   CMlisten_specific ( myCM, listen_info );
 
-  BOOST_LOG(lg) << "Forking comm thread, ready to provide services.";
+  BOOST_LOG_SEV(lg, drift::info) << "Forking comm thread, ready to provide services.";
   CMfork_comm_thread (myCM);
   CMCondition_wait ( myCM, terminate_condition );
   

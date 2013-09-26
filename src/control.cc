@@ -7,6 +7,7 @@ using namespace std;
 
 extern CManager myCM;
 
+extern logging::sources::severity_logger<drift::severity_level> lg;
 
 void
 drift::control::heartbeat_setup()
@@ -63,7 +64,7 @@ drift::control::submit_heartbeat ( CManager cm, void *cdata )
 
   EVsubmit ( hci->source, &hb, NULL );
 
-  //  BOOST_LOG(lg) << "Heartbeat submission" << endl;
+  BOOST_LOG_SEV(lg, drift::debug) << "Heartbeat submission" << endl;
 
   return;
 }
