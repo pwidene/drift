@@ -2,16 +2,16 @@
 
 #include "control.h"
 #include "formats.h"
+#include "service.h"
 
 using namespace std;
-
-extern CManager myCM;
 
 extern logging::sources::severity_logger<drift::severity_level> lg;
 
 void
 drift::control::heartbeat_setup()
 {
+  CManager myCM = drift::service::get_service()->cm();
   heartbeat_control_info *hci = reinterpret_cast<heartbeat_control_info*>(calloc(1, sizeof(heartbeat_control_info)));
 
   hci->control_stone = EValloc_stone(myCM);
@@ -45,9 +45,9 @@ drift::control::heartbeat_handler ( CManager cm, void *vevent, void *client_data
   get_int_attr ( attrs, hci->remote_stone_atom, &remote_stone );
   get_string_attr ( attrs, hci->remote_contact_atom, &clist_str );
 
-  new_bridge = EValloc_stone(myCM);
-  EVassoc_bridge_action ( myCM, new_bridge, attr_list_from_string(clist_str), remote_stone );
-  EVaction_add_split_target ( myCM, hci->split_stone, hci->split_action, new_bridge );
+  new_bridge = EValloc_stone( cm );
+  EVassoc_bridge_action ( cm, new_bridge, attr_list_from_string(clist_str), remote_stone );
+  EVaction_add_split_target ( cm, hci->split_stone, hci->split_action, new_bridge );
   return 1;
 }
 

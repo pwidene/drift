@@ -15,12 +15,7 @@
 
 //#include "mongo/client/dbclient.h"
 
-#include "atl.h"
-#include "evpath.h"
-
-#include "internal.h"
-#include "formats.h"
-#include "control.h"
+#include "service.h"
 
 using namespace std;
 
@@ -28,9 +23,6 @@ namespace po = boost::program_options;
 
 po::options_description driftd_opts("Allowed options");
 logging::sources::severity_logger<drift::severity_level> lg(boost::log::keywords::severity = drift::debug);
-
-int terminate_condition;
-CManager myCM;
 
 
 void 
@@ -41,20 +33,9 @@ usage(char* prog)
 
 
 
-extern "C"
-void 
-close_handler( int signo ) 
-{
-  BOOST_LOG_SEV(lg, drift::info) << "Shutting down.";
-  CMCondition_signal ( myCM, terminate_condition );
-}
-
-
 int 
 main (int argc , char *argv[]) 
 {
-  attr_list listen_info;
-  
   struct sigaction new_action, old_action;
   int bootstrap_node = 0;
 
@@ -91,15 +72,8 @@ main (int argc , char *argv[])
 
   po::notify( opts_vm );
     
-  /* 
-   * Initialize the server network and setup all the message handlers 
-   */
-  myCM = CManager_create();
-
-  terminate_condition = CMCondition_get ( myCM, NULL );
-
   /* Catch SIGINT, SIGTERM */  
-  new_action.sa_handler = close_handler;
+  new_action.sa_handler = drift::service::close_handler;
   sigemptyset(&new_action.sa_mask);
   
   sigaction(SIGINT,NULL,&old_action);
@@ -110,20 +84,7 @@ main (int argc , char *argv[])
   if (old_action.sa_handler != SIG_IGN)
     sigaction(SIGTERM,&new_action,NULL);
   
-  drift::control::heartbeat_setup();
+  drift::service::get_service()->begin();
 
-  /*
-   *  Set up transport listener, fork comm thread, and wait to die
-   *  control listener on port 44999 
-   */  
-  listen_info = create_attr_list();
-  static atom_t CM_IP_PORT = attr_atom_from_string("IP_PORT");
-  add_attr ( listen_info, CM_IP_PORT, Attr_Int4, reinterpret_cast<attr_value>(44999) );
-  CMlisten_specific ( myCM, listen_info );
-
-  BOOST_LOG_SEV(lg, drift::info) << "Forking comm thread, ready to provide services.";
-  CMfork_comm_thread (myCM);
-  CMCondition_wait ( myCM, terminate_condition );
-  
   return 0;
 }
