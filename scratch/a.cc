@@ -16,7 +16,7 @@ doit()
  
   http_request req ( methods::GET );
   req.headers().add ( "Accept", "application/json" );
-  req.set_request_uri ( "requestpath" );
+  //  req.set_request_uri ( "requestpath" );
   return client.request(req).then([](http_response response) -> pplx::task<json::value>
 				  {
 				    if ( response.status_code() == status_codes::OK ) {
