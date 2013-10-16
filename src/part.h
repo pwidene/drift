@@ -15,14 +15,17 @@ namespace drift {
 
   public:
 
-    part();
+    part(const bool now = false);
     part(const boost::uuids::uuid&, bool now = false);
     virtual ~part();
 
-    void fill();
+    void load();
+    void create();
+    void store();
 
     std::string name_;
     boost::uuids::uuid tag_;
+    unsigned long node_id_;
 
     union {
       unsigned long i_;
@@ -33,6 +36,8 @@ namespace drift {
     } immediate_;
 
     std::vector<part*> partlist_;
+
+    static const std::string& get_n4j_rest_uri() const;
 
   private:
     
