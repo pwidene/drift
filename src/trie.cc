@@ -1,7 +1,7 @@
 #include "trie.h"
 
 template <class T>
-TrieNode<T>::TrieNode() :
+drift::TrieNode<T>::TrieNode() :
   key_ ('\0'),
   val_ (NULL)
 {
@@ -9,7 +9,7 @@ TrieNode<T>::TrieNode() :
 
 
 template <class T>
-TrieNode<T>::TrieNode ( const char& ch, const T& data ) :
+drift::TrieNode<T>::TrieNode ( const char& ch, const T& data ) :
   key_ (ch),
   val_ (data)
 {
@@ -17,19 +17,19 @@ TrieNode<T>::TrieNode ( const char& ch, const T& data ) :
 
 
 template <class T>
-TrieNode<T>::~TrieNode()
+dritf::TrieNode<T>::~TrieNode()
 {
 }
 
 
 template <class T>
 void
-TrieNode<T>::clear()
+drift::TrieNode<T>::clear()
 {
   typename trie_hash_t::iterator n_iter;
 
   for (n_iter = children_.begin(); n_iter != children_.end(); n_iter++) {
-    TrieNode<T>* child = n_iter->second;
+    drift::TrieNode<T>* child = n_iter->second;
     child->clear();
     delete child;
   }
@@ -38,13 +38,13 @@ TrieNode<T>::clear()
 
 template <class T>
 size_t
-TrieNode<T>::size() const
+drift::TrieNode<T>::size() const
 {
   size_t rval = 1; // count myself
   typename trie_hash_t::const_iterator hash_iter;
 
   for (hash_iter = children_.begin(); hash_iter != children_.end(); hash_iter++) {
-    TrieNode<T>* np = hash_iter->second;
+    drift::TrieNode<T>* np = hash_iter->second;
     rval += np->size();
   }
 
@@ -54,14 +54,14 @@ TrieNode<T>::size() const
 
 template <class T>
 void 
-TrieNode<T>::add_child ( const char& ch, const TrieNode<T>* child )
+drift::TrieNode<T>::add_child ( const char& ch, const TrieNode<T>* child )
 {
   children_.insert ( trie_hash_t::value_type ( ch, child ) );
 }
 
 template <class T>
-TrieNode<T>* 
-TrieNode<T>::get_child ( const char& ch )
+drift::TrieNode<T>* 
+drift::TrieNode<T>::get_child ( const char& ch )
 {
   typename trie_hash_t::iterator i = children_.find ( ch );
   return (i != children_.end() ? i->second : NULL );
@@ -70,13 +70,13 @@ TrieNode<T>::get_child ( const char& ch )
 
 template <class T>
 void
-TrieNode<T>::add_to_vector ( vector<T>& vec ) const
+drift::TrieNode<T>::add_to_vector ( vector<T>& vec ) const
 {
   typename trie_hash_t::iterator n_iter;
 
   vec.push_back ( val_ );
   for (n_iter = children_.begin(); n_iter != children_.end(); n_iter++) {
-    TrieNode<T>* child = n_iter->second;
+    drift::TrieNode<T>* child = n_iter->second;
     child->add_to_vector ( vec );
   }
 }
@@ -99,7 +99,7 @@ Trie<T>::Trie ( const string& key, const T& val )
 }
 
 template <class T>
-Trie<T>::Trie ( const vector<string>& keys, const vector<T>& vals )
+drift::Trie<T>::Trie ( const vector<string>& keys, const vector<T>& vals )
 {
   vector<string>::const_iterator k_iter;
   vector<string>::const_iterator v_iter;
@@ -112,7 +112,7 @@ Trie<T>::Trie ( const vector<string>& keys, const vector<T>& vals )
 }
 
 template <class T>
-Trie<T>::~Trie()
+drift::Trie<T>::~Trie()
 {
   clear();
 }
@@ -120,7 +120,7 @@ Trie<T>::~Trie()
 
 template <class T>
 size_t 
-Trie<T>::size() const
+drift::Trie<T>::size() const
 {
   return root_.size();
 }
@@ -128,19 +128,19 @@ Trie<T>::size() const
 
 template <class T>
 void
-Trie<T>::put ( const string& key, const T& newval ) 
+drift::Trie<T>::put ( const string& key, const T& newval ) 
 {
   string::const_iterator s_iter;
 
-  TrieNode<T>* new_child;
-  TrieNode<T>* node = root_;
-  TrieNode<T>* lookup = NULL;
+  drift::TrieNode<T>* new_child;
+  drift::TrieNode<T>* node = root_;
+  drift::TrieNode<T>* lookup = NULL;
 
   for (s_iter = key.begin(); s_iter != key.end(); s_iter++) {
     lookup = node->get_child ( *s_iter );
     if (!lookup) {
       /* no child node with that character.  Add one */
-      node->add_child ( new_child = new TrieNode<T> ( *s_iter, newval ) );
+      node->add_child ( new_child = new drift::TrieNode<T> ( *s_iter, newval ) );
       node = new_child;
     } else {
       node = lookup;
@@ -158,7 +158,7 @@ Trie<T>::put ( const string& key, const T& newval )
 
 template <class T>
 bool
-Trie<T>::get ( const string& key, T& val ) const
+drift::Trie<T>::get ( const string& key, T& val ) const
 {
   T myval;
   size_t s = get_longest_prefix ( key, myval );
@@ -173,7 +173,7 @@ Trie<T>::get ( const string& key, T& val ) const
 
 template <class T>
 void
-Trie<T>::clear()
+drift::Trie<T>::clear()
 {
   root_.clear();
 }
@@ -181,15 +181,15 @@ Trie<T>::clear()
 
 template <class T>
 void
-Trie<T>::clear ( const string& key )
+drift::Trie<T>::clear ( const string& key )
 {
   get_node ( key ) -> clear();
 }
 
 
 template <class T>
-TrieNode<T>*
-Trie<T>::get_node ( const string& key ) const
+drift::TrieNode<T>*
+drift::Trie<T>::get_node ( const string& key ) const
 {
   return NULL; 
 }
@@ -197,7 +197,7 @@ Trie<T>::get_node ( const string& key ) const
 
 template <class T>
 void
-Trie<T>::add_to_vector ( vector<T>& vec ) const
+drift::Trie<T>::add_to_vector ( vector<T>& vec ) const
 {
   root_.add_to_vector ( vec );
 }
@@ -205,9 +205,9 @@ Trie<T>::add_to_vector ( vector<T>& vec ) const
 
 template <class T>
 void
-Trie<T>::add_to_vector ( vector<T>& vec, const string& prefix ) const
+drift::Trie<T>::add_to_vector ( vector<T>& vec, const string& prefix ) const
 {
-  TrieNode<T>* node;
+  drift::TrieNode<T>* node;
 
   if (get_longest_prefix_node ( prefix, node ) ) {
     node->add_to_vector ( vec );
@@ -218,11 +218,11 @@ Trie<T>::add_to_vector ( vector<T>& vec, const string& prefix ) const
 
 template <class T>
 size_t
-Trie<T>::get_longest_prefix_node ( const string& key, TrieNode<T>*& node ) const
+drift::Trie<T>::get_longest_prefix_node ( const string& key, drift::TrieNode<T>*& node ) const
 {
   string::const_iterator s_iter;
   bool keep_going = true;
-  TrieNode<T>* search_node = root_;
+  drift::TrieNode<T>* search_node = root_;
 
   for (s_iter = key.begin(); keep_going && s_iter != key.end(); s_iter++) {
     keep_going = ( (search_node = search_node->get_child ( *s_iter )) != NULL );
@@ -238,10 +238,10 @@ Trie<T>::get_longest_prefix_node ( const string& key, TrieNode<T>*& node ) const
 
 template <class T>
 size_t
-Trie<T>::get_longest_prefix ( const string& key, T& val ) const
+drift::Trie<T>::get_longest_prefix ( const string& key, T& val ) const
 {
   size_t rval;
-  TrieNode<T>* node = NULL;
+  drift::TrieNode<T>* node = NULL;
   
   rval = get_longest_prefix_node ( key, node );
   if (rval) {

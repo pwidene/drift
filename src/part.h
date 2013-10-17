@@ -25,7 +25,7 @@ namespace drift {
 
     std::string name_;
     boost::uuids::uuid tag_;
-    unsigned long node_id_;
+    std::string node_uri_;
 
     union {
       unsigned long i_;

@@ -56,27 +56,17 @@ drift::part::create()
   req.set_body ( props );
 
   pplx::task<void> ptask = 
-    client.request(req).then([](http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() == status_codes::OK ) {
-	  return response.extract_json();
+    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+	if ( response.status_code() != web::http::status_codes::Created ) {
+	  throw response;
 	}
-	return pplx::task_from_result(json::value());
-      }).then([](pplx::task<json::value> previousTask) {
-	  try {
-	    const json::value& v = previousTask.get();
-	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
-	      const json::value &str = iter->first;
-	      const json::value &val = iter->second;
-	      std::cout << "key: " << str.as_string() << ", value = " << val.to_string() << endl;
-	    }
-	  }
-	  catch (const http_exception& e) {
-	    ostringstream ss;
-	    ss << e.what() << endl;
-	    cout << ss.str();
-	  }
+
+	// get the URI from the REST response and save it
+	web::http::http_headers::iterator i = response.find("Location");
+	if (i != response.end()) {
+	  node_uri_ = i->second;
 	}
-	);
+      });
 }
 
 
@@ -84,7 +74,7 @@ drift::part::create()
 void
 drift::part::load()
 {
-  ostringstream ostr;
+  std::ostringstream ostr;
   ostr << drift::part::get_n4j_rest_uri() << node_id_;
   web::http::client::http_client cli ( ostr.str() );
   web::http::http_request req ( web::http::methods::GET );
@@ -92,8 +82,8 @@ drift::part::load()
   req.headers().add ( "Accept", "application/json" );
   
   pplx::task<void> ptask = 
-    client.request(req).then([](http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() == status_codes::OK ) {
+  client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+      if ( response.status_code() == web::http::status_codes::OK ) {
 	  return response.extract_json();
 	}
 	return pplx::task_from_result(json::value());
@@ -103,13 +93,13 @@ drift::part::load()
 	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
 	      const json::value &str = iter->first;
 	      const json::value &val = iter->second;
-	      std::cout << "key: " << str.as_string() << ", value = " << val.to_string() << endl;
+	      std::cout << "key: " << str.as_string() << ", value = " << val.to_string() << std::endl;
 	    }
 	  }
 	  catch (const http_exception& e) {
-	    ostringstream ss;
+	    std::ostringstream ss;
 	    ss << e.what() << endl;
-	    cout << ss.str();
+	    std::cout << ss.str();
 	  }
 	}
 	);
@@ -118,8 +108,11 @@ drift::part::load()
 void
 drift::part::store()
 {
-  ostringstream ostr;
-  ostr << drift::part::get_n4j_rest_uri() << 
+}
+
+
+drift::part::remove()
+{}
 
 
 

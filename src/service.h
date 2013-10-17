@@ -6,6 +6,9 @@
 
 #include "internal.h"
 #include "control.h"
+#include "trie.h"
+#include "part.h"
+
 
 namespace drift {
 
@@ -25,6 +28,8 @@ namespace drift {
     
     CManager cm_;
     static int terminate_condition_;
+
+    Trie<part*> master_index_;
   
   private:
     static service *instance_;
