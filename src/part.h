@@ -29,10 +29,9 @@ namespace drift {
 
     union {
       unsigned long i_;
-      char c_;
       std::string s_;
-      float f_;
       double d_;
+      std::string json_;
     } immediate_;
 
     std::vector<part*> partlist_;
