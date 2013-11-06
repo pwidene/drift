@@ -7,6 +7,8 @@
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
 
+#include "json.h"
+
 #include "internal.h"
 
 namespace drift {
@@ -37,6 +39,8 @@ namespace drift {
     std::vector<part*> partlist_;
 
     static const std::string& get_n4j_rest_uri() const;
+
+    void json_props ( web::json::value& );
 
   private:
     

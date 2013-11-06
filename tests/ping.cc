@@ -23,7 +23,9 @@ ping_handler( CManager cm, void* vevent, void* cdata, attr_list attrs )
   drift::heartbeat_ptr event = static_cast< drift::heartbeat_ptr > ( vevent );
 
   cout << "Heartbeat received, timestamp " << event->ts << endl;
-  CMCondition_signal ( cm, terminate_condition );
+  if (! CMCondition_has_signaled ( cm, terminate_condition )) {
+    CMCondition_signal ( cm, terminate_condition );
+  }
   return 0;
 }
 

@@ -36,6 +36,17 @@ drift::part::part (const boost::uuids::uuid& tag, bool now) :
 }
 
 void
+drift::part::json_props ( web::json::value& props )
+{
+  props["tag"] = json::value::string ( tag_.to_string() );
+  props["name"] = json::value::string ( name_ );
+
+  //needs to be a switch based on the union type being used
+  props["immediate"] = json::value::number ( immediate_.i_ );
+}
+
+
+void
 drift::part::create()
 {
   std::ostringstream ostr;
@@ -47,11 +58,7 @@ drift::part::create()
   req.headers().add ( "Content-Type", "application/json" );
 
   web::json::value props;
-  props["tag"] = json::value::string ( tag_.to_string() );
-  props["name"] = json::value::string ( name_ );
-
-  //needs to be a switch based on the union type being used
-  props["immediate"] = json::value::number ( immediate_.i_ );
+  json_props ( props );
     
   req.set_body ( props );
 
@@ -112,8 +119,41 @@ drift::part::store()
 
 
 drift::part::remove()
-{}
+{
+  std::ostringstream ostr;
+  ostr << drift::part::get_n4j_rest_uri() << "node/" << node_id_;
+  web::http::client::http_client cli ( ostr.str() );
+  web::http::http_request req ( web::http::methods::DELETE );
 
+  req.headers().add ( "Accept", "application/json" );
+
+  pplx::task<void> ptask = 
+    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+	if ( response.status_code() == web::http::status_codes::Conflict ) {
+	  throw response;
+	}
+	if ( response.status_code() == web::http::status_codes::NoContent ) {
+	  return response.extract_json();
+	}
+	return pplx::task_from_result(json::value());
+      }).then([](pplx::task<json::value> previousTask) {
+	  try {
+	    const json::value& v = previousTask.get();
+	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
+	      const json::value &str = iter->first;
+	      const json::value &val = iter->second;
+	      std::cout << "key: " << str.as_string() << ", value = " << val.to_string() << std::endl;
+	    }
+	  }
+	  catch (const http_exception& e) {
+	    std::ostringstream ss;
+	    ss << e.what() << endl;
+	    std::cout << ss.str();
+	  }
+	}
+	);
+
+  
 
 
 
