@@ -38,7 +38,7 @@ namespace drift {
 
     std::vector<part*> partlist_;
 
-    static const std::string& get_n4j_rest_uri() const;
+    static const std::string& get_n4j_rest_uri();
 
     void json_props ( web::json::value& );
 

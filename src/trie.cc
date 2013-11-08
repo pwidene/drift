@@ -17,7 +17,7 @@ drift::TrieNode<T>::TrieNode ( const char& ch, const T& data ) :
 
 
 template <class T>
-dritf::TrieNode<T>::~TrieNode()
+drift::TrieNode<T>::~TrieNode()
 {
 }
 
@@ -89,11 +89,11 @@ drift::TrieNode<T>::add_to_vector ( vector<T>& vec ) const
  ************************************************************/
 
 template <class T>
-Trie<T>::Trie()
+drift::Trie<T>::Trie()
 {}
 
 template <class T>
-Trie<T>::Trie ( const string& key, const T& val )
+drift::Trie<T>::Trie ( const string& key, const T& val )
 {
   put ( key, val );
 }
