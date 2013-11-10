@@ -6,6 +6,26 @@ if( NOT CMAKE_BUILD_TYPE )
   set( CMAKE_BUILD_TYPE "RelWithDebInfo" )
 endif()
 
+# Initialize CXXFLAGS.
+set(CMAKE_CXX_FLAGS                "-Wall -std=c++11")
+set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g")
+set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
+
+# Compiler-specific C++11 activation.
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    execute_process(
+        COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
+    if (NOT (GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8))
+        message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.8 or greater.")
+    endif ()
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+else ()
+    message(FATAL_ERROR "Your C++ compiler does not support C++11.")
+endif ()
+
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 set( CMAKE_SKIP_BUILD_RPATH FALSE )
 set( CMAKE_BUILD_WITH_INSTALL_RPATH FALSE )
@@ -23,10 +43,6 @@ if( NOT MONGOROOT )
   set( MONGOROOT ${CMAKE_INSTALL_PREFIX} )
 endif()
 
-if( NOT CASABLANCA_PREFIX )
-  MESSAGE( STATUS "CASABLANCA_PREFIX not set!! You almost certainly will not be able to build." )
-endif()
-
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
@@ -41,9 +57,12 @@ include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} )
 find_package( Boost COMPONENTS thread program_options system log log_setup chrono )
 #find_package( MongoDB )
 
+if( NOT CASABLANCA_PREFIX )
+  MESSAGE( FATAL_ERROR "CASABLANCA_PREFIX not set!! Casablanca is required in order to build Drift.  Stopping." )
+endif()
+
 set (CASABLANCA_INCLUDES ${CASABLANCA_PREFIX}/Release/include ${CASABLANCA_PREFIX}/Release/include/cpprest ${CASABLANCA_PREFIX}/Release/include/pplx)
 set (CASABLANCA_LIBRARIES casablanca)
-set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++11)
 include_directories( ${CASABLANCA_INCLUDES} ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
 link_directories( ${CERCS_PREFIX}/lib ${CASABLANCA_PREFIX}/Binaries/Debug64 )
 set (CERCS_LIB_LIST evpath ffs dill atl cercs_env)
