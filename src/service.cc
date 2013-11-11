@@ -33,6 +33,7 @@ drift::service::begin()
   cm_ = CManager_create();
 
   drift::control::heartbeat_setup();
+  drift::action::action_setup();
 
   /*
    *  Set up transport listener, fork comm thread, and wait to die

@@ -1,7 +1,10 @@
-#include "control.h"
+#include <iostream>
+
+#include "action.h"
 #include "formats.h"
 #include "service.h"
-#include "action.h"
+
+using namespace std;
 
 extern logging::sources::severity_logger<drift::severity_level> lg;
 
@@ -15,14 +18,18 @@ drift::action::action_setup()
   action_stone_ = EValloc_stone ( cm );
 
   // set up action handlers
-  EVassoc_terminal_action ( cm, action_stone_, put_immediate_i_format_list, drift::action::put_immediate_action, new drift::action::immed_type (immed_int));
-  EVassoc_terminal_action ( cm, action_stone_, put_immediate_d_format_list, drift::action::put_immediate_action, new drift::action::immed_type (immed_double));
-  EVassoc_terminal_action ( cm, action_stone_, put_immediate_s_format_list, drift::action::put_immediate_action, new drift::action::immed_type (immed_string));
-  EVassoc_terminal_action ( cm, action_stone_, put_immediate_json_format_list, drift::action::put_immediate_action, new drift::action::immed_type (immed_json) );
-
-  EVassoc_terminal_action ( cm, action_stone_, simple_part_xfer_format_list, drift::action::simple_part_xfer_action, NULL );
-
-  EVassoc_terminal_action ( cm, action_stone_, complex_part_xfer_format_list, drift::action::complex_part_xfer_action, NULL );
+  EVassoc_terminal_action ( cm, action_stone_, drift::put_i_immediate_formats,
+			    drift::action::put_immediate_action, new drift::action::immed_type (immed_int) );
+  EVassoc_terminal_action ( cm, action_stone_, drift::put_d_immediate_formats,
+			    drift::action::put_immediate_action, new drift::action::immed_type (immed_double) );
+  EVassoc_terminal_action ( cm, action_stone_, drift::put_s_immediate_formats,
+			    drift::action::put_immediate_action, new drift::action::immed_type (immed_string) );
+  EVassoc_terminal_action ( cm, action_stone_, drift::put_json_immediate_formats,
+			    drift::action::put_immediate_action, new drift::action::immed_type (immed_json) );
+  
+  EVassoc_terminal_action ( cm, action_stone_, drift::simple_part_xfer_formats, drift::action::simple_part_xfer_action, NULL );
+  
+  EVassoc_terminal_action ( cm, action_stone_, drift::complex_part_xfer_formats, drift::action::complex_part_xfer_action, NULL );
 
 }
 
@@ -30,6 +37,7 @@ drift::action::action_setup()
 int
 drift::action::put_immediate_action ( CManager cm, void *msg, void *cdata, attr_list attrs )
 {
+
   drift::action::immed_type *it = reinterpret_cast<drift::action::immed_type*> ( cdata );
   switch (it->type_) {
   case immed_int:

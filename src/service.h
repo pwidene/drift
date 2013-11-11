@@ -6,6 +6,7 @@
 
 #include "internal.h"
 #include "control.h"
+#include "action.h"
 #include "trie.h"
 #include "part.h"
 

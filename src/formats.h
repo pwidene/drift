@@ -8,44 +8,44 @@ namespace drift {
     unsigned long flags;
   } heartbeat, *heartbeat_ptr;
 
-  extern FMField heartbeat_field_list[];
-  extern FMStructDescRec heartbeat_format_list[];
+  extern FMField heartbeat_fields[];
+  extern FMStructDescRec heartbeat_formats[];
 
-  typedef struct _put_immediate_i {
+  typedef struct _put_i_immediate {
     heartbeat meta;
     unsigned long val;
     char *path;
-  } put_immediate_i, *put_immediate_i_ptr;
+  } put_i_immediate, *put_i_immediate_ptr;
 
-  extern FMField put_immediate_i_field_list[];
-  extern FMStructDescRec put_immediate_i_format_list[];
+  extern FMField put_i_immediate_fields[];
+  extern FMStructDescRec put_i_immediate_formats[];
 
-  typedef struct _put_immediate_d {
+  typedef struct _put_d_immediate {
     heartbeat meta;
     double val;
     char *path;
-  } put_immediate_d, *put_immediate_d_ptr;
+  } put_d_immediate, *put_d_immediate_ptr;
 
-  extern FMField put_immediate_d_field_list[];
-  extern FMStructDescRec put_immediate_d_format_list[];
+  extern FMField put_d_immediate_fields[];
+  extern FMStructDescRec put_d_immediate_formats[];
 
-  typedef struct _put_immediate_s {
+  typedef struct _put_s_immediate {
     heartbeat meta;
     char *val;
     char *path;
-  } put_immediate_s, *put_immediate_s_ptr;
+  } put_s_immediate, *put_s_immediate_ptr;
 
-  extern FMField put_immediate_s_field_list[];
-  extern FMStructDescRec put_immediate_s_format_list[];
+  extern FMField put_s_immediate_fields[];
+  extern FMStructDescRec put_s_immediate_formats[];
 
-  typedef struct _put_immediate_json {
+  typedef struct _put_json_immediate {
     heartbeat meta;
     char *val;
     char *path;
-  } put_immediate_json, *put_immediate_json_ptr;
+  } put_json_immediate, *put_json_immediate_ptr;
 
-  extern FMField put_immediate_json_field_list[];
-  extern FMStructDescRec put_immediate_json_format_list[];
+  extern FMField put_json_immediate_fields[];
+  extern FMStructDescRec put_json_immediate_formats[];
 
   typedef struct _simple_part {
     char *payload;
@@ -53,8 +53,8 @@ namespace drift {
     char *metadata;
   } simple_part, *simple_part_ptr;
 
-  extern FMField simple_part_field_list[];
-  extern FMStructDescRec simple_part_format_list[];
+  extern FMField simple_part_fields[];
+  extern FMStructDescRec simple_part_formats[];
 
   typedef struct _complex_part {
     unsigned long count;
@@ -62,8 +62,8 @@ namespace drift {
     char *metadata;
   } complex_part, *complex_part_ptr;
   
-  extern FMField complex_part_field_list[];
-  extern FMStructDescRec complex_part_format_list[];
+  extern FMField complex_part_fields[];
+  extern FMStructDescRec complex_part_formats[];
 
   typedef struct _simple_part_xfer {
     unsigned long flags;
@@ -72,8 +72,8 @@ namespace drift {
     char* index_spec;
   } simple_part_xfer, *simple_part_xfer_ptr;
 
-  extern FMField simple_part_xfer_field_list[];
-  extern FMStructDescRec simple_part_xfer_format_list[];
+  extern FMField simple_part_xfer_fields[];
+  extern FMStructDescRec simple_part_xfer_formats[];
 
   typedef struct _complex_part_xfer {
     unsigned long flags;
@@ -82,8 +82,8 @@ namespace drift {
     char *index_spec;
   } complex_part_xfer, *complex_part_xfer_ptr;
 
-  extern FMField complex_part_xfer_field_list[];
-  extern FMStructDescRec complex_part_xfer_format_list[];
+  extern FMField complex_part_xfer_fields[];
+  extern FMStructDescRec complex_part_xfer_formats[];
 
 
 }

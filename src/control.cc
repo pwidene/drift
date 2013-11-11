@@ -19,11 +19,11 @@ drift::control::heartbeat_setup()
   hci->split_action = EVassoc_split_action ( myCM, hci->split_stone, NULL );
   hci->remote_stone_atom = attr_atom_from_string("D_STONE");
   hci->remote_contact_atom = attr_atom_from_string("D_CONTACT_LIST");
-  hci->source = EVcreate_submit_handle ( myCM, hci->split_stone, drift::heartbeat_format_list );
+  hci->source = EVcreate_submit_handle ( myCM, hci->split_stone, drift::heartbeat_formats );
 
   EVassoc_terminal_action ( myCM, 
 			    hci->control_stone, 
-			    drift::heartbeat_format_list, 
+			    drift::heartbeat_formats, 
 			    drift::control::heartbeat_handler, 
 			    hci );
 

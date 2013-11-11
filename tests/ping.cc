@@ -72,13 +72,13 @@ main( int argc, char* argv[] )
   add_attr ( contact_list, CM_PORT, Attr_Int4, reinterpret_cast<attr_value>(port) );
 
   EVstone in_stone;
-  in_stone = EVcreate_terminal_action( cm, drift::heartbeat_format_list, ping_handler, NULL );
+  in_stone = EVcreate_terminal_action( cm, drift::heartbeat_formats, ping_handler, NULL );
 
   EVsource source_handle;
   int out_stone, remote_stone = 0;
   out_stone = EValloc_stone( cm );
   EVassoc_bridge_action( cm, out_stone, contact_list, remote_stone );
-  source_handle = EVcreate_submit_handle( cm, out_stone, drift::heartbeat_format_list );
+  source_handle = EVcreate_submit_handle( cm, out_stone, drift::heartbeat_formats );
 
   drift::heartbeat hb;
   hb.ts = 0;
