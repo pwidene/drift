@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 set (NO_INST_PROGS ping)
 
 add_executable(ping ping.cc)
-target_link_libraries(ping drift driftf ${CERCS_LIB_LIST} ${Boost_LIBRARIES})
+target_link_libraries(ping driftf ${CERCS_LIB_LIST} ${Boost_LIBRARIES})
 
 ENABLE_TESTING()
 
