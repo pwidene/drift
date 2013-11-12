@@ -6,28 +6,44 @@
 
 #include "internal.h"
 
+class service;
+
 namespace drift {
 
-  typedef struct {
-    EVstone control_stone;
-    EVstone split_stone;
-    EVaction split_action;
-    EVsource source;
-    atom_t remote_stone_atom;
-    atom_t remote_contact_atom;
-  } heartbeat_control_info;
-  
   class control {
+
+    typedef struct {
+      EVstone control_stone_;
+      EVstone split_stone_;
+      EVaction split_action_;
+      EVsource source_;
+      atom_t remote_stone_atom_;
+      atom_t remote_contact_atom_;
+    } control_info, *control_info_ptr;
+
   public:
-    static int heartbeat_handler ( CManager cm, void *vevent, void *client_data, attr_list attrs );
-    static void heartbeat_setup();
-    static void submit_heartbeat ( CManager cm, void *cdata);
-  private:
-    control(const control&);
-    control& operator=(const control&);
+    static int handle_heartbeat ( CManager cm, void *vevent, void *client_data, attr_list attrs );
+    static void submit_heartbeat ( CManager cm, void *cdata );
 
-  };
+    static int handle_advert ( CManager cm, void *vevent, void *cdata, attr_list attrs );
+    static void submit_advert ( CManager cm, void *cdata );
 
+  protected:
+
+    control_info hc_, ac_;
+
+    service *service_;
+    
+  public:
+    control ( service& s );
+    virtual ~control() {};
+    
+    private:
+      control(const control&);
+      control& operator=(const control&);
+      
+    };
+    
 }
 
 #endif // __CONTROL_H__

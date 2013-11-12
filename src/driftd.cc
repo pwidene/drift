@@ -12,6 +12,7 @@
 #include "boost/program_options.hpp"
 #include "boost/log/utility/string_literal.hpp"
 #include "boost/chrono/system_clocks.hpp"
+#include "boost/scoped_ptr.hpp"
 
 //#include "mongo/client/dbclient.h"
 
@@ -38,6 +39,7 @@ main (int argc , char *argv[])
 {
   struct sigaction new_action, old_action;
   int bootstrap_node = 0;
+
 
   /*
    *  Start logging services
@@ -84,7 +86,8 @@ main (int argc , char *argv[])
   if (old_action.sa_handler != SIG_IGN)
     sigaction(SIGTERM,&new_action,NULL);
   
-  drift::service::get_service()->begin();
+  boost::scoped_ptr<drift::service> sp = new drift::service;
+  sp->begin();
 
   return 0;
 }

@@ -11,6 +11,15 @@ namespace drift {
   extern FMField heartbeat_fields[];
   extern FMStructDescRec heartbeat_formats[];
 
+  typedef struct _advert_s {
+    heartbeat meta;
+    char* service_endpoint;
+    int endpoint_stone;
+  } advert, *advert_ptr;
+
+  extern FMField advert_fields[];
+  extern FMStructDescRec advert_formats[];
+
   typedef struct _put_i_immediate {
     heartbeat meta;
     unsigned long val;

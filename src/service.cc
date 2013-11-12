@@ -1,3 +1,4 @@
+#include "boost/scoped_ptr.hpp"
 
 #include "service.h"
 
@@ -9,22 +10,16 @@ int drift::service::terminate_condition_;
 drift::service::~service() {}
 
 drift::service::service()
+  : c_ (NULL)
 {}
 
-drift::service*
-drift::service::get_service()
+
+char*
+drift::service::service_endpoint() const
 {
-  if (drift::service::instance_ == NULL) {
-    drift::service::instance_ = new drift::service;
-  }
-  return drift::service::instance_;
+  return service_endpoint_;
 }
 
-CManager
-drift::service::cm() const
-{
-  return cm_;
-}
 
 void
 drift::service::begin()
@@ -32,8 +27,17 @@ drift::service::begin()
   attr_list listen_info;
   cm_ = CManager_create();
 
-  drift::control::heartbeat_setup();
+  c_ = new control (this);
   drift::action::action_setup();
+
+  /*
+   *  Listen for incoming service requests.  Get the contact information and save it
+   *  to provide on the control/advertisement channel.  Do this before listening on the
+   *  control port so the contact list is correct for advertising.
+   */
+  CMlisten ( cm_ );
+  service_endpoint_ = attr_list_to_string ( CMget_contact_list ( cm_ ) );
+  
 
   /*
    *  Set up transport listener, fork comm thread, and wait to die
@@ -43,6 +47,8 @@ drift::service::begin()
   static atom_t CM_IP_PORT = attr_atom_from_string("IP_PORT");
   add_attr ( listen_info, CM_IP_PORT, Attr_Int4, reinterpret_cast<attr_value>(44999) );
   CMlisten_specific ( cm_, listen_info );
+
+  
 
   BOOST_LOG_SEV(lg, drift::info) << "Forking comm thread, ready to provide services.";
   terminate_condition_ = CMCondition_get ( cm_, NULL );

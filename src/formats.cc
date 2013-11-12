@@ -8,16 +8,32 @@
   static FMStructDescRec FMStructDescRec_list_terminator = {(char*)0, (FMFieldList)0};
 
 FMField drift::heartbeat_fields[] =
-    {
-      {"ts", "integer", sizeof(long), FMOffset(drift::heartbeat_ptr, ts)},
-      {"flags", "integer", sizeof(long), FMOffset(drift::heartbeat_ptr, flags)},
-      FMfields_terminator
-    };
+  {
+    {"ts", "integer", sizeof(long), FMOffset(drift::heartbeat_ptr, ts)},
+    {"flags", "integer", sizeof(long), FMOffset(drift::heartbeat_ptr, flags)},
+    FMfields_terminator
+  };
 FMStructDescRec drift::heartbeat_formats[] =
-    {
-      {"heartbeat", drift::heartbeat_fields, sizeof(drift::heartbeat), (FMOptInfo*)0 },
-      FMStructDescRec_list_terminator
-    };
+  {
+    {"heartbeat", drift::heartbeat_fields, sizeof(drift::heartbeat), (FMOptInfo*)0 },
+    FMStructDescRec_list_terminator
+  };
+
+FMField drift::advert_fields[] = 
+  {
+    {"meta", "heartbeat", sizeof(drift::heartbeat), FMOffset(drift::advert_ptr, meta)},
+    {"service_endpoint", "string", sizeof(char*), FMOffset(drift::advert_ptr, service_endpoint)},
+    {"endpoint_stone", "integer", sizeof(int), FMOffset(drift::advert_ptr, endpoint_stone)},
+    FMFields_terminator
+  };
+
+FMStructDescRec drift::advert_formats[] =
+  {
+    {"advert", drift::advert_fields, sizeof(drift::advert), (FMOptInfo*)0 },
+    {"heartbeat", drift::heartbeat_fields, sizeof(drift::heartbeat), (FMOptInfo*)0 },
+    FMStructDescRec_list_terminator
+  };
+
 
 FMField drift::put_i_immediate_fields[] =
     {
