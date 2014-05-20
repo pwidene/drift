@@ -31,7 +31,7 @@ drift::part::part (const boost::uuids::uuid& tag, bool now) :
   tag_ (tag)
 {
   if (now) {
-    this->load();
+    this->store();
   }  
 }
 
@@ -47,13 +47,23 @@ drift::part::json_props ( web::json::value& props )
 
 
 void
-drift::part::create()
+drift::part::store()
 {
   std::ostringstream ostr;
   ostr << drift::part::get_n4j_rest_uri() << "node";
   web::http::client::http_client cli ( ostr.str() );
-  web::http::http_request req ( web::http::methods::POST );
-  
+  web::http::http_request req;
+
+  //  An empty node_uri means we haven't been stored yet
+  bool creating;
+  if (node_uri_.empty()) {
+    creating = true;
+    req.set_method ( web::http::methods::POST );
+  } else {
+    creating = false;
+    req.set_method ( web::http::methods::PUT );
+  }
+
   req.headers().add ( "Accept", "application/json" );
   req.headers().add ( "Content-Type", "application/json" );
 
@@ -64,14 +74,25 @@ drift::part::create()
 
   pplx::task<void> ptask = 
     client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() != web::http::status_codes::Created ) {
-	  throw response;
-	}
+	if ( response.status_code() == web::http::status_codes::Created and creating) {
 
-	// get the URI from the REST response and save it
-	web::http::http_headers::iterator i = response.find("Location");
-	if (i != response.end()) {
-	  node_uri_ = i->second;
+	  // get the URI from the REST response and save it
+	  web::http::http_headers::iterator i = response.find("Location");
+	  if (i != response.end()) {
+	    node_uri_ = i->second;
+	  }
+
+	  ctime_ = mtime_ = boost::chrono::system_clock::now();
+
+	} else if ( response.status_code() == web::http::status_codes::NoContent and not creating ) {
+	  
+	  // this was a triumph, I'm making a note here, HUGE SUCCESS
+	  mtime_ = boost::chrono::system_clock::now();
+
+	} else {
+	  
+	  // We're in uncharted territory, pull the ripcord
+	  throw response;
 	}
       });
 }
@@ -94,7 +115,9 @@ drift::part::load()
 	  return response.extract_json();
 	}
 	return pplx::task_from_result(json::value());
-      }).then([](pplx::task<json::value> previousTask) {
+    });
+    /*
+      .then([](pplx::task<json::value> previousTask) {
 	  try {
 	    const json::value& v = previousTask.get();
 	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
@@ -110,14 +133,11 @@ drift::part::load()
 	  }
 	}
 	);
+    */
 }
+
 
 void
-drift::part::store()
-{
-}
-
-
 drift::part::remove()
 {
   std::ostringstream ostr;
@@ -136,7 +156,10 @@ drift::part::remove()
 	  return response.extract_json();
 	}
 	return pplx::task_from_result(json::value());
-      }).then([](pplx::task<json::value> previousTask) {
+      });
+
+  /*
+    .then([](pplx::task<json::value> previousTask) {
 	  try {
 	    const json::value& v = previousTask.get();
 	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
@@ -152,11 +175,57 @@ drift::part::remove()
 	  }
 	}
 	);
+  */
+}
 
+
+
+void 
+drift::part::add_child ( part& child )
+{
+  str::ostringstream ostr;
+  ostr << drift::part::get_n4j_rest_uri() << "node/" << node_id_;
+  web::http::client::http_client cli ( ostr.str() );
+  web::http::http_request req ( web::http::methods::POST );
   
+  req.headers().add ( "Accept", "application/json" );
+  req.headers().add ( "Content-Type", "application/json" );
+  
+  web::json::value body;
+  body["to"] = drift::part::get_n4j_rest_uri() + "node/" + child.node_id_;
+  body["type"] = "CHILD";
+  req.set_body ( body );
+
+  pplx::task<void> ptask = 
+    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+	if ( response.status_code() == web::http::status_codes::Created) {
+	  throw response;
+	}
+	if ( response.status_code() == web::http::status_codes::NoContent ) {
+	  return response.extract_json();
+	}
+	return pplx::task_from_result(json::value());
+      })  
+    .then([](pplx::task<json::value> previousTask) {
+	try {
+	  const json::value& v = previousTask.get();
+	  parts_.insert ( std::pair< v["Location"], &child > );
+	}
+	catch (const http_exception& e) {
+	  std::ostringstream ss;
+	  ss << e.what() << endl;
+	  std::cout << ss.str();
+	}
+      }
+      );
+}
 
 
 
+void
+drift::part::remove_child ( part& child )
+{
+}
 
 
 

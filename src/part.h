@@ -2,10 +2,11 @@
 #define __PART_H__
 
 #include <string>
-#include <vector>
+#include <set>
 
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
+#include "boost/chrono.hpp"
 
 #include "json.h"
 
@@ -22,12 +23,12 @@ namespace drift {
     virtual ~part();
 
     void load();
-    void create();
     void store();
 
     std::string name_;
     boost::uuids::uuid tag_;
     std::string node_uri_;
+    boost::chrono::system_clock::time_point ctime_, mtime_;
 
     union {
       unsigned long i_;
@@ -36,11 +37,14 @@ namespace drift {
       std::string json_;
     } immediate_;
 
-    std::vector<part*> partlist_;
+    std::set < std::pair<std::string, part*> > parts_;
 
     static const std::string& get_n4j_rest_uri();
 
     void json_props ( web::json::value& );
+
+    add_child ( part& );
+    remove_child ( part& );
 
   private:
     
