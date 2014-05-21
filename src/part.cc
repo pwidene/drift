@@ -181,9 +181,9 @@ drift::part::remove()
 
 
 void 
-drift::part::add_child ( part& child )
+drift::part::adopt ( part& child )
 {
-  str::ostringstream ostr;
+  std::ostringstream ostr;
   ostr << drift::part::get_n4j_rest_uri() << "node/" << node_id_;
   web::http::client::http_client cli ( ostr.str() );
   web::http::http_request req ( web::http::methods::POST );
@@ -221,11 +221,58 @@ drift::part::add_child ( part& child )
 }
 
 
+void
+drift::part::abandon()
+{
+  for (auto iter = parts_.begin(); iter != parts_.end(); ++iter) {
+    web::http::client::http_client cli (iter->second);
+    web::http::http_request req ( web::http::methods::DELETE );
+    req.headers().add ( "Accept", "application/json" );
+
+    pplx::task<void> ptask = 
+      client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+	  if ( response.status_code() != web::http::status_codes::NoContent) {
+	    throw response;
+	  }
+	  return pplx::task_from_result(json::value());
+	});
+  }
+}
 
 void
-drift::part::remove_child ( part& child )
+drift::part::abandon ( part& child )
 {
+  /* 
+   *  To be clear, here, what we're doing is severing the relationship between 
+   *    me and this particular child part.  Neither a shallow nor deep deletion.
+   */
+
+  // Linear search, is ugly, FIXME with better data structure?
+  for (auto iter = parts_.begin(); iter != parts_.end(); ++iter) {
+    if (iter->second == child) {
+      web::http::client::http_client cli (iter->second);
+      web::http::http_request req ( web::http::methods::DELETE );
+      req.headers().add ( "Accept", "application/json" );
+
+      pplx::task<void> ptask = 
+	client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+	    if ( response.status_code() != web::http::status_codes::NoContent) {
+	      throw response;
+	    }
+	    return pplx::task_from_result(json::value());
+	  });
+      
+      // assume we have only one possible child relationship with each child part, because
+      // otherwise that would be weird
+      break;
+    }
+  }
 }
+
+
+
+
+
 
 
 

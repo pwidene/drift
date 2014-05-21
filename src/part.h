@@ -43,8 +43,9 @@ namespace drift {
 
     void json_props ( web::json::value& );
 
-    add_child ( part& );
-    remove_child ( part& );
+    adopt( part& );
+    abandon ( part& );
+    abandon();
 
   private:
     
