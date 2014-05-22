@@ -2,7 +2,7 @@
 #define __PART_H__
 
 #include <string>
-#include <set>
+#include <unordered_map>
 
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
@@ -24,7 +24,17 @@ namespace drift {
 
     void load();
     void store();
+    void adopt( part& );
+    void abandon ( part& );
+    void abandon();
 
+    part& operator= ( unsigned long i ) { immediate_.i_ = i; };
+    part& operator= ( std::string& s ) { immediate_.s_ = s; };
+    part& operator= ( double d ) { immediate_.d_ = d; };
+
+  public:
+
+    std::unordered_map < part*, std::string > parts_;
     std::string name_;
     boost::uuids::uuid tag_;
     std::string node_uri_;
@@ -34,18 +44,13 @@ namespace drift {
       unsigned long i_;
       std::string s_;
       double d_;
-      std::string json_;
     } immediate_;
 
-    std::set < std::pair<std::string, part*> > parts_;
+
+  protected:
 
     static const std::string& get_n4j_rest_uri();
-
     void json_props ( web::json::value& );
-
-    adopt( part& );
-    abandon ( part& );
-    abandon();
 
   private:
     

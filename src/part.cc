@@ -1,4 +1,6 @@
 
+#include <algorithm>
+
 #include "http_client.h"
 #include "json.h"
 
@@ -209,7 +211,7 @@ drift::part::adopt ( part& child )
     .then([](pplx::task<json::value> previousTask) {
 	try {
 	  const json::value& v = previousTask.get();
-	  parts_.insert ( std::pair< v["Location"], &child > );
+	  parts_[&child] = v["Location"];
 	}
 	catch (const http_exception& e) {
 	  std::ostringstream ss;
@@ -224,19 +226,21 @@ drift::part::adopt ( part& child )
 void
 drift::part::abandon()
 {
-  for (auto iter = parts_.begin(); iter != parts_.end(); ++iter) {
-    web::http::client::http_client cli (iter->second);
-    web::http::http_request req ( web::http::methods::DELETE );
-    req.headers().add ( "Accept", "application/json" );
+  std::for_each ( parts_.begin(), parts_.end(), 
+		  [](std::pair<std::string, drift::part*> p) {
+		      
+		    web::http::client::http_client cli (p->second);
+		    web::http::http_request req ( web::http::methods::DELETE );
+		    req.headers().add ( "Accept", "application/json" );
 
-    pplx::task<void> ptask = 
-      client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	  if ( response.status_code() != web::http::status_codes::NoContent) {
-	    throw response;
-	  }
-	  return pplx::task_from_result(json::value());
-	});
-  }
+		    pplx::task<void> ptask = 
+		      client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+			  if ( response.status_code() != web::http::status_codes::NoContent) {
+			    throw response;
+			  }
+			  return pplx::task_from_result(json::value());
+			});
+		  })
 }
 
 void
@@ -247,27 +251,20 @@ drift::part::abandon ( part& child )
    *    me and this particular child part.  Neither a shallow nor deep deletion.
    */
 
-  // Linear search, is ugly, FIXME with better data structure?
-  for (auto iter = parts_.begin(); iter != parts_.end(); ++iter) {
-    if (iter->second == child) {
-      web::http::client::http_client cli (iter->second);
-      web::http::http_request req ( web::http::methods::DELETE );
-      req.headers().add ( "Accept", "application/json" );
+  web::http::client::http_client cli ( parts_[&child] ); 
+  web::http::http_request req ( web::http::methods::DELETE );
+  req.headers().add ( "Accept", "application/json" );
 
-      pplx::task<void> ptask = 
-	client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	    if ( response.status_code() != web::http::status_codes::NoContent) {
-	      throw response;
-	    }
-	    return pplx::task_from_result(json::value());
-	  });
-      
-      // assume we have only one possible child relationship with each child part, because
-      // otherwise that would be weird
-      break;
-    }
-  }
+  pplx::task<void> ptask = 
+    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
+	if ( response.status_code() != web::http::status_codes::NoContent) {
+	  throw response;
+	}
+	return pplx::task_from_result(json::value());
+      });
 }
+      
+
 
 
 
