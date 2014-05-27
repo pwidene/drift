@@ -20,19 +20,14 @@ namespace drift {
   public:
 
     part ( const bool now = false );
-    part ( web::json::value& storage_meta );
     part ( const boost::uuids::uuid&, bool now = false );
     virtual ~part();
 
-    void load();
-    void store();
-    void adopt( part& );
-    void abandon ( part& );
-    void abandon();
-
-    part& operator= ( unsigned long i ) { immediate_.i_ = i; };
-    part& operator= ( std::string& s ) { immediate_.s_ = s; };
-    part& operator= ( double d ) { immediate_.d_ = d; };
+    virtual void load();
+    virtual void store();
+    virtual void adopt( part& );
+    virtual void abandon ( part& );
+    virtual void abandon();
 
   public:
 
@@ -42,18 +37,10 @@ namespace drift {
     std::string node_uri_;
     boost::chrono::system_clock::time_point ctime_, mtime_;
 
-    union {
-      unsigned long i_;
-      std::string s_;
-      double d_;
-    } immediate_;
-
-    web::json::value storage_meta_;
-
   protected:
 
     static const std::string& get_n4j_rest_uri();
-    void json_props ( web::json::value& );
+    virtual void json_props ( web::json::value& );
 
     std::bitset<8> dirty_;
     const short int Properties = 0;
@@ -66,6 +53,70 @@ namespace drift {
     part ( const part& );
 
   };
+
+  
+  class external_part : public part {
+
+  public:
+
+    external_part ( const bool now = false );
+    external_part ( const web::json::value& storage_meta );
+    external_part ( const boost::uuids::uuid&, bool now = false );
+    virtual ~external_part();
+
+    virtual void load();
+    virtual void store();
+
+  public:
+
+    web::json::value storage_meta_;
+
+  protected:
+
+    virtual void json_props ( web::json::value& );
+
+  private:
+
+    external_part& operator= ( const external_part& );
+    external_part ( const external_part& );
+
+  };
+
+  class immediate_part : public part {
+
+  public:
+
+    immediate_part ( const bool now = false );
+    immediate_part ( const boost::uuids::uuid&, bool now = false );
+    virtual ~immediate_part();
+
+    virtual void load();
+    virtual void store();
+
+    part& operator= ( unsigned long i ) { immediate_.i_ = i; };
+    part& operator= ( std::string& s ) { immediate_.s_ = s; };
+    part& operator= ( double d ) { immediate_.d_ = d; };
+
+  public:
+
+    union {
+      unsigned long u_;
+      long l_;
+      std::string s_;
+      double d_;
+    } immediate_;
+
+  protected:
+
+    virtual void json_props ( web::json::value& );
+
+  private:
+
+    immediate_part& operator= ( const immediate_part& );
+    immediate_part ( const immediate_part& );
+
+  };
+
 
 }
 

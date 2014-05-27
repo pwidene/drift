@@ -47,13 +47,6 @@ drift::part::json_props ( web::json::value& props )
 {
   props["tag"] = json::value::string ( tag_.to_string() );
   props["name"] = json::value::string ( name_ );
-
-  //needs to be a switch based on the union type being used
-  props["immediate"] = json::value::number ( immediate_.i_ );
-
-  std::ostringstream ostr;
-  ostr << storage_meta_;
-  props["storage_meta"] = ostr.str();
 }
 
 
