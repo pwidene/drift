@@ -21,13 +21,18 @@ drift::part::get_n4j_rest_uri() const
 drift::part::~part()
 {}
 
-drift::part::part(const bool now)
+drift::part::part ( const bool now )
 {
   if (now)
     this->create();
 }
-  
 
+drift::part::part ( web::json::value& storage_meta )
+  : storage_meta_ ( storage_meta )
+{
+}
+  
+ 
 
 drift::part::part (const boost::uuids::uuid& tag, bool now) :
   tag_ (tag)
@@ -45,6 +50,10 @@ drift::part::json_props ( web::json::value& props )
 
   //needs to be a switch based on the union type being used
   props["immediate"] = json::value::number ( immediate_.i_ );
+
+  std::ostringstream ostr;
+  ostr << storage_meta_;
+  props["storage_meta"] = ostr.str();
 }
 
 

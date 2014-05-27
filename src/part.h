@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <bitset>
 
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
@@ -18,8 +19,9 @@ namespace drift {
 
   public:
 
-    part(const bool now = false);
-    part(const boost::uuids::uuid&, bool now = false);
+    part ( const bool now = false );
+    part ( web::json::value& storage_meta );
+    part ( const boost::uuids::uuid&, bool now = false );
     virtual ~part();
 
     void load();
@@ -46,11 +48,17 @@ namespace drift {
       double d_;
     } immediate_;
 
+    web::json::value storage_meta_;
 
   protected:
 
     static const std::string& get_n4j_rest_uri();
     void json_props ( web::json::value& );
+
+    std::bitset<8> dirty_;
+    const short int Properties = 0;
+    const short int External = 1;
+    const short int Immediate = 2;
 
   private:
     
@@ -61,7 +69,8 @@ namespace drift {
 
 }
 
-
+/*
+ *  
 #endif // __PART_H__
 
     
