@@ -3,6 +3,12 @@
 
 #include "boost/scoped_ptr.hpp"
 
+#include "boost/geometry/index/rtree.hpp"
+#include "boost/geometry/index/parameters.hpp"
+#include "boost/geometry/geometries/point.hpp"
+#include "boost/geometry/geometries/box.hpp"
+#include "boost/geometry/geometries/adapted/boost_array.hpp"
+
 #include "atl.h"
 #include "evpath.h"
 
@@ -36,6 +42,8 @@ namespace drift {
     static int terminate_condition_;
     char *service_endpoint_;
     Trie<part*> master_index_;
+
+    
   
   private:
     static service *instance_;
