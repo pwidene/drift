@@ -45,9 +45,8 @@ drift::immediate_part::json_props ( web::json::value& props )
   // get the superclass properties
   part::json_props ( props );
 
-  // insert the immediate data properties
-  //needs to be a switch based on the union type being used
-  props["immediate"] = json::value::number ( immediate_.i_ );
+  // insert the immediate data properties by serializing the immediate JSON map
+  props["immediate"] = immediate_.to_string();
 }
 
 

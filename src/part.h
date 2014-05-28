@@ -1,3 +1,4 @@
+/* -*- mode: c++; -*- */
 #ifndef __PART_H__
 #define __PART_H__
 
@@ -47,6 +48,9 @@ namespace drift {
     const short int External = 1;
     const short int Immediate = 2;
 
+    const std::string n4j_rest_uri = "http://localhost:7474/db/data/";
+    const std::string& get_n4j_rest_uri() const { return n4j_rest_uri; };
+
   private:
     
     part& operator= ( const part& );
@@ -93,18 +97,14 @@ namespace drift {
     virtual void load();
     virtual void store();
 
-    part& operator= ( unsigned long i ) { immediate_.i_ = i; };
-    part& operator= ( std::string& s ) { immediate_.s_ = s; };
-    part& operator= ( double d ) { immediate_.d_ = d; };
+    part& operator= ( unsigned long u ) { immediate_["unsigned-long"] = web::json::value::parse ( std::to_string ( u ) ); }
+    part& operator= ( long l ) { immediate_["long"] = web::json::value::parse ( std::to_string ( l ) ); }
+    part& operator= ( std::string& s ) { immediate_["string"] = web::json::value::parse ( s ); };
+    part& operator= ( double d ) { immediate_["double"] = web::json::value::parse ( std::to_string ( d ) ); };
 
   public:
 
-    union {
-      unsigned long u_;
-      long l_;
-      std::string s_;
-      double d_;
-    } immediate_;
+    web::json::value immediate_;
 
   protected:
 
@@ -120,8 +120,10 @@ namespace drift {
 
 }
 
-/*
- *  
+
 #endif // __PART_H__
+
+
+
 
     

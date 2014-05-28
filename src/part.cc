@@ -9,13 +9,6 @@
 
 extern logging::sources::severity_logger<drift::severity_level> lg;
 
-std::string n4j_rest_uri = "http://localhost:7474/db/data/";
-
-const std::string&
-drift::part::get_n4j_rest_uri() const
-{
-  return drift::part::n4j_rest_uri;
-}
 
 
 drift::part::~part()
@@ -23,16 +16,8 @@ drift::part::~part()
 
 drift::part::part ( const bool now )
 {
-  if (now)
-    this->create();
 }
 
-drift::part::part ( web::json::value& storage_meta )
-  : storage_meta_ ( storage_meta )
-{
-}
-  
- 
 
 drift::part::part (const boost::uuids::uuid& tag, bool now) :
   tag_ (tag)
