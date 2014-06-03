@@ -16,7 +16,7 @@
 
 namespace drift {
 
-  class part {
+  class part : public proactive {
 
   public:
 
