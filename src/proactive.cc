@@ -15,7 +15,7 @@ drift::proactive::proactive ( FMStructDescRec format_list[] )
 
 drift::proactive::~proactive()
 {
-  if ( source_handle_ neq nullptr ) {
+  if ( source_handle_ != nullptr ) {
     EVfree_source ( source_handle_ );
   }
   if ( stone_ == -1 ) {
