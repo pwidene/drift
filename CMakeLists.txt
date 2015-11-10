@@ -38,10 +38,6 @@ if( NOT CERCS_PREFIX )
   set( CERCS_PREFIX ${CMAKE_INSTALL_PREFIX} )
 endif()
 
-if( NOT MONGOROOT )
-  MESSAGE( STATUS "MONGOROOT not set, using CMAKE_INSTALL_PREFIX (${CMAKE_INSTALL_PREFIX})" )
-  set( MONGOROOT ${CMAKE_INSTALL_PREFIX} )
-endif()
 
 include(CheckFunctionExists)
 include(CheckIncludeFiles)
@@ -55,16 +51,19 @@ add_definitions(-DBOOST_ALL_DYN_LINK)
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} )
 
 find_package( Boost COMPONENTS thread program_options system log log_setup chrono )
-#find_package( MongoDB )
 
 if( NOT CASABLANCA_PREFIX )
   MESSAGE( FATAL_ERROR "CASABLANCA_PREFIX not set!! Casablanca is required in order to build Drift.  Stopping." )
 endif()
 
+if( NOT REDOX_PREFIX )
+  MESSAGE( FATAL_ERROR "REDOX_PREFIX not set!! Redox is required in order to build Drift. Stopping.")
+endif()
+
 set (CASABLANCA_INCLUDES ${CASABLANCA_PREFIX}/Release/include ${CASABLANCA_PREFIX}/Release/include/cpprest ${CASABLANCA_PREFIX}/Release/include/pplx)
 set (CASABLANCA_LIBRARIES casablanca)
-include_directories( ${CASABLANCA_INCLUDES} ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
-link_directories( ${CERCS_PREFIX}/lib ${CASABLANCA_PREFIX}/Binaries/Debug64 )
+include_directories( ${REDOX_PREFIX}/include ${CASABLANCA_INCLUDES} ${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
+link_directories( ${REDOX_PREFIX}/lib ${CERCS_PREFIX}/lib ${CASABLANCA_PREFIX}/Binaries/Debug64 )
 set (CERCS_LIB_LIST evpath ffs dill atl cercs_env)
 
 add_subdirectory( src )

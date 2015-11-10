@@ -1,13 +1,13 @@
 #ifndef __SERVICE_H__
 #define __SERVICE_H__
 
-#include "boost/scoped_ptr.hpp"
-
 #include "boost/geometry/index/rtree.hpp"
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/geometries/point.hpp"
 #include "boost/geometry/geometries/box.hpp"
 #include "boost/geometry/geometries/adapted/boost_array.hpp"
+#include "boost/graph/adjacency_list.hpp"
+#include "boost/tuple/tuple.hpp"
 
 #include "atl.h"
 #include "evpath.h"
@@ -34,7 +34,7 @@ namespace drift {
     
     char* service_endpoint() const;
 
-    boost::scoped_ptr<control> c_;
+    unique_ptr<control> c_;
 
   protected:
     
@@ -43,7 +43,9 @@ namespace drift {
     char *service_endpoint_;
     Trie<part*> master_index_;
 
-    
+    typedef boost::adjacency_list < listS, listS > PartGraph;
+
+    PartGraph pgraph_;
   
   private:
     static service *instance_;
