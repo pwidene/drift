@@ -28,6 +28,8 @@ drift::service::begin()
   cm_ = CManager_create();
 
   c_ = new control (this);
+  
+  
   drift::action::action_setup();
 
   /*

@@ -18,6 +18,7 @@
 #include "trie.h"
 #include "part.h"
 
+using namespace std;
 
 namespace drift {
 
