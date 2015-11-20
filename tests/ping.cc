@@ -63,8 +63,8 @@ main( int argc, char* argv[] )
   static atom_t CM_HOSTNAME = attr_atom_from_string("IP_HOST");
   static atom_t CM_PORT = attr_atom_from_string("IP_PORT");
 
-  static atom_t D_STONE = attr_atom_from_string("D_STONE");
-  static atom_t D_CONTACT_LIST = attr_atom_from_string("D_CONTACT_LIST");
+  static atom_t D_STONE = attr_atom_from_string("d-stone");
+  static atom_t D_CONTACT_LIST = attr_atom_from_string("d-client-contact-list");
 
   string host_str = opts_vm["hostname"].as<string>();
   int port = opts_vm["port"].as<int>();

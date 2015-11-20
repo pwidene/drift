@@ -44,8 +44,8 @@ namespace drift {
      *    -- these map (eventually) to the handler stack which manipulates data
      *
      */
-    EVstone stone_;
-    EVaction split_;
+    EVstone hb_split_stone_;
+    EVaction hb_split_action_;
     EVsource heartbeat_source_;
     EVsource advert_source_;
 
