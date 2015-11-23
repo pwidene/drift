@@ -56,7 +56,7 @@ if( NOT REDOX_PREFIX )
   MESSAGE( FATAL_ERROR "REDOX_PREFIX not set!! Redox is required in order to build Drift. Stopping.")
 endif()
 
-if( NOT LIBJSON_PREFIX )
+if( NOT LIBJSON_PREFIX and NOT OTHER_PREFIX)
   MESSAGE( FATAL_ERROR "LIBJSON_PREFIX not set. LibJSON is required in order to build Drift. Stopping.")
 endif()
 
