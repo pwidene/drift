@@ -44,7 +44,9 @@ namespace drift {
     char *service_endpoint_;
     Trie<part*> master_index_;
 
-    typedef boost::adjacency_list < listS, listS > PartGraph;
+    boost::dynamic_properties part_props, link_props;
+
+    typedef boost::adjacency_list < listS, listS, directedS, part_props, link_props > PartGraph;
 
     PartGraph pgraph_;
   
