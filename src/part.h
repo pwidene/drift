@@ -9,6 +9,9 @@
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
 #include "boost/chrono.hpp"
+#include "boost/adjacency_list.hpp"
+#include "boost/tuple/tuple.hpp"
+
 
 #include "json.h"
 
@@ -34,8 +37,14 @@ namespace drift {
 
     std::unordered_map < part*, std::string > parts_;
     std::string name_;
+
+    // My UUID
     boost::uuids::uuid tag_;
-    std::string node_uri_;
+    
+    // Pointer to my vertex in the service's part graph
+    boost::vertex_descriptor v_;
+
+    // Creation and modification times
     boost::chrono::system_clock::time_point ctime_, mtime_;
 
   protected:
@@ -50,6 +59,10 @@ namespace drift {
 
     const std::string n4j_rest_uri = "http://localhost:7474/db/data/";
     const std::string& get_n4j_rest_uri() const { return n4j_rest_uri; };
+
+    // Reference to the whole part graph owned by the service instance
+    // who created me
+    drift::PartGraph& pgraph_;
 
   private:
     

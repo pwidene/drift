@@ -86,7 +86,7 @@ main (int argc , char *argv[])
   if (old_action.sa_handler != SIG_IGN)
     sigaction(SIGTERM,&new_action,NULL);
   
-  boost::scoped_ptr<drift::service> sp = new drift::service;
+  unique_ptr<drift::service> sp ( new drift::service );
   sp->begin();
 
   return 0;

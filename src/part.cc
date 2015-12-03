@@ -1,8 +1,10 @@
 
+using namespace std;
+
 #include <algorithm>
 
-#include "http_client.h"
-#include "json.h"
+
+#include "json/json.h"
 
 #include "internal.h"
 #include "part.h"
@@ -38,6 +40,9 @@ drift::part::json_props ( web::json::value& props )
 void
 drift::part::store()
 {
+  
+  
+
   std::ostringstream ostr;
   ostr << drift::part::get_n4j_rest_uri() << "node";
   web::http::client::http_client cli ( ostr.str() );
@@ -172,41 +177,19 @@ drift::part::remove()
 void 
 drift::part::adopt ( part& child )
 {
-  std::ostringstream ostr;
-  ostr << drift::part::get_n4j_rest_uri() << "node/" << node_id_;
-  web::http::client::http_client cli ( ostr.str() );
-  web::http::http_request req ( web::http::methods::POST );
-  
-  req.headers().add ( "Accept", "application/json" );
-  req.headers().add ( "Content-Type", "application/json" );
-  
-  web::json::value body;
-  body["to"] = drift::part::get_n4j_rest_uri() + "node/" + child.node_id_;
-  body["type"] = "CHILD";
-  req.set_body ( body );
+  /*
+   *  Add the edge to the part graph
+   */
+  auto edpair = add_edge ( v_, child.v_, pgraph_ );
+  auto now = boost::chrono::system_clock::now();
+  if ( edpair.second ) {
+    // new edge addition, store any edge properties
+    ;
+    
+  }
 
-  pplx::task<void> ptask = 
-    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() == web::http::status_codes::Created) {
-	  throw response;
-	}
-	if ( response.status_code() == web::http::status_codes::NoContent ) {
-	  return response.extract_json();
-	}
-	return pplx::task_from_result(json::value());
-      })  
-    .then([](pplx::task<json::value> previousTask) {
-	try {
-	  const json::value& v = previousTask.get();
-	  parts_[&child] = v["Location"];
-	}
-	catch (const http_exception& e) {
-	  std::ostringstream ss;
-	  ss << e.what() << endl;
-	  std::cout << ss.str();
-	}
-      }
-      );
+  // Force a store on one or both parts?
+  
 }
 
 

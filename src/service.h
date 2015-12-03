@@ -37,18 +37,17 @@ namespace drift {
 
     unique_ptr<control> c_;
 
+    
+    boost::dynamic_properties part_props, link_props;
+    typedef boost::adjacency_list < listS, listS, directedS, part_props, link_props > PartGraph;
+    PartGraph pgraph_;
+
   protected:
     
     CManager cm_;
     static int terminate_condition_;
     char *service_endpoint_;
     Trie<part*> master_index_;
-
-    boost::dynamic_properties part_props, link_props;
-
-    typedef boost::adjacency_list < listS, listS, directedS, part_props, link_props > PartGraph;
-
-    PartGraph pgraph_;
   
   private:
     static service *instance_;
