@@ -22,6 +22,11 @@ using namespace std;
 
 namespace drift {
 
+  struct {
+    string json;
+    string attrs;
+  } drift_props;
+  
   class service {
 
   public:
@@ -37,9 +42,7 @@ namespace drift {
 
     unique_ptr<control> c_;
 
-    
-    boost::dynamic_properties part_props, link_props;
-    typedef boost::adjacency_list < listS, listS, directedS, part_props, link_props > PartGraph;
+    typedef boost::adjacency_list < listS, listS, directedS, drift_props, drift_props > PartGraph;
     PartGraph pgraph_;
 
   protected:

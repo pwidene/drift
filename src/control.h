@@ -14,7 +14,6 @@ namespace drift {
 
 
     static int handle_heartbeat ( CManager cm, void *vevent, void *client_data, attr_list attrs );
-    static void submit_heartbeat ( CManager cm, void *cdata );
 
     static int handle_advert ( CManager cm, void *vevent, void *cdata, attr_list attrs );
     static void submit_advert ( CManager cm, void *cdata );
