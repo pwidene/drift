@@ -11,42 +11,38 @@ using namespace std;
 
 extern logging::sources::severity_logger<drift::severity_level> lg;
 
+namespace drift {
+
+  part::~part()
+  {}
+
+  part::part ( const bool now ) :
+    dirty_( New )
+  {
+  }
 
 
-drift::part::~part()
-{}
-
-drift::part::part ( const bool now )
-{
-}
-
-
-drift::part::part (const boost::uuids::uuid& tag, bool now) :
-  tag_ (tag)
-{
-  if (now) {
-    this->store();
-  }  
-}
-
-void
-drift::part::json_props ( web::json::value& props )
-{
-  props["tag"] = json::value::string ( tag_.to_string() );
-  props["name"] = json::value::string ( name_ );
-}
-
+  part::part (const boost::uuids::uuid& tag, const bool now) :
+    tag_ (tag), dirty_( New )
+  {
+    if (now) {
+      this->store();
+    }  
+  }
 
 void
-drift::part::store()
+part::json_props ( Json::Value& props )
+{
+  props["tag"] = tag_.to_string();
+  props["name"] = name_;
+}
+
+
+void
+part::store()
 {
   
   
-
-  std::ostringstream ostr;
-  ostr << drift::part::get_n4j_rest_uri() << "node";
-  web::http::client::http_client cli ( ostr.str() );
-  web::http::http_request req;
 
   //  An empty node_uri means we haven't been stored yet
   bool creating;
@@ -94,10 +90,10 @@ drift::part::store()
 
 
 void
-drift::part::load()
+part::load()
 {
   std::ostringstream ostr;
-  ostr << drift::part::get_n4j_rest_uri() << node_id_;
+  ostr << part::get_n4j_rest_uri() << node_id_;
   web::http::client::http_client cli ( ostr.str() );
   web::http::http_request req ( web::http::methods::GET );
   
@@ -132,10 +128,10 @@ drift::part::load()
 
 
 void
-drift::part::remove()
+part::remove()
 {
   std::ostringstream ostr;
-  ostr << drift::part::get_n4j_rest_uri() << "node/" << node_id_;
+  ostr << part::get_n4j_rest_uri() << "node/" << node_id_;
   web::http::client::http_client cli ( ostr.str() );
   web::http::http_request req ( web::http::methods::DELETE );
 
@@ -175,7 +171,7 @@ drift::part::remove()
 
 
 void 
-drift::part::adopt ( part& child )
+part::adopt ( part& child )
 {
   /*
    *  Add the edge to the part graph
@@ -194,10 +190,10 @@ drift::part::adopt ( part& child )
 
 
 void
-drift::part::abandon()
+part::abandon()
 {
   std::for_each ( parts_.begin(), parts_.end(), 
-		  [](std::pair<std::string, drift::part*> p) {
+		  [](std::pair<std::string, part*> p) {
 		      
 		    web::http::client::http_client cli (p->second);
 		    web::http::http_request req ( web::http::methods::DELETE );
@@ -214,7 +210,7 @@ drift::part::abandon()
 }
 
 void
-drift::part::abandon ( part& child )
+part::abandon ( part& child )
 {
   /* 
    *  To be clear, here, what we're doing is severing the relationship between 

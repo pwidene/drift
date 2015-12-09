@@ -23,7 +23,7 @@ namespace drift {
     heartbeat_source_ = EVcreate_submit_handle ( myCM, hb_split_stone_, heartbeat_formats );
     advert_source_ = EVcreate_submit_handle ( myCM, hb_split_stone_, advert_formats );
 
-    //action_setup( stone_ );
+    action_setup( myCM, stone_ );
     
     /* 
      *  CM periodic task for heartbeat
@@ -80,5 +80,27 @@ namespace drift {
   void
   control::submit_advert ( CManager cm, void *cdata );
   {}
+
+
+  
+  void
+  control::action_setup ( CManager myCM, EVstone st )
+  {
+
+#define ACTION_HELPER(theformats,handler)			 \
+    EVassoc_terminal_action ( myCM, st, drift::##theformats_formats,	\
+			      [](CManager cm, void* msg, void* cdata, attr_list a) \
+			      {						\
+				shared_ptr<control> C (dynamic_cast<control*> ( cdata ) ); \
+				return C->##handler( msg, a );		\
+			      },					\
+			      this );   
+
+    ACTION_HELPER(put_i_immediate,put_immediate_action);
+    ACTION_HELPER(put_i_immediate,get_immediate_action);
+    ACTION_HELPER(simple_part_xfer,simple_part_xfer_action);
+    ACTION_HELPER(complex_part_xfer,complex_part_xfer_action);
+
+  }
 
 }

@@ -14,7 +14,7 @@ set (LIBDRIFTF_SRC_LIST formats.cc)
 # add_library(drift SHARED ${LIBDRIFT_SRC_LIST})
 add_library(driftf SHARED ${LIBDRIFTF_SRC_LIST})
 
-add_executable(driftd driftd.cc control.cc control-wraps.cc service.cc proactive.cc part.cc external_part.cc immediate_part.cc)
+add_executable(driftd driftd.cc control.cc service.cc proactive.cc part.cc external_part.cc immediate_part.cc)
 target_link_libraries(driftd driftf ${CERCS_LIB_LIST} ${CASABLANCA_LIBRARIES} ${Boost_LIBRARIES})
 set_target_properties( driftd PROPERTIES RPATH_MACOSX TRUE )
 install(TARGETS driftd

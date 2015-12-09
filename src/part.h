@@ -13,7 +13,7 @@
 #include "boost/tuple/tuple.hpp"
 
 
-#include "json.h"
+#include "json/json.h"
 
 #include "internal.h"
 
@@ -49,16 +49,13 @@ namespace drift {
 
   protected:
 
-    static const std::string& get_n4j_rest_uri();
-    virtual void json_props ( web::json::value& );
+    virtual void json_props ( Json::Value& );
 
     std::bitset<8> dirty_;
     const short int Properties = 0;
     const short int External = 1;
     const short int Immediate = 2;
-
-    const std::string n4j_rest_uri = "http://localhost:7474/db/data/";
-    const std::string& get_n4j_rest_uri() const { return n4j_rest_uri; };
+    const short int New = 7;
 
     // Reference to the whole part graph owned by the service instance
     // who created me
@@ -77,7 +74,7 @@ namespace drift {
   public:
 
     external_part ( const bool now = false );
-    external_part ( const web::json::value& storage_meta );
+    external_part ( const Json::Value& storage_meta );
     external_part ( const boost::uuids::uuid&, bool now = false );
     virtual ~external_part();
 
@@ -86,11 +83,11 @@ namespace drift {
 
   public:
 
-    web::json::value storage_meta_;
+    Json::value storage_meta_;
 
   protected:
 
-    virtual void json_props ( web::json::value& );
+    virtual void json_props ( Json::Value& );
 
   private:
 
@@ -117,11 +114,11 @@ namespace drift {
 
   public:
 
-    web::json::value immediate_;
+    Json::Value immediate_;
 
   protected:
 
-    virtual void json_props ( web::json::value& );
+    virtual void json_props ( Json::Value& );
 
   private:
 

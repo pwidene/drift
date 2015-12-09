@@ -12,14 +12,19 @@ namespace drift {
 
   class control {
 
+  public:
+    control ( service& s );
+    virtual ~control() {};
 
-    static int handle_heartbeat ( CManager cm, void *vevent, void *client_data, attr_list attrs );
+    int handle_heartbeat ( CManager cm, void *vevent, void *client_data, attr_list attrs );
 
-    static int handle_advert ( CManager cm, void *vevent, void *cdata, attr_list attrs );
+    int handle_advert ( CManager cm, void *vevent, void *cdata, attr_list attrs );
     static void submit_advert ( CManager cm, void *cdata );
 
   protected:
 
+    void action_setup( CManager, EVstone );
+    
     /*
      *  The service is the source for:
      *    - heartbeat events. 
@@ -53,11 +58,7 @@ namespace drift {
     
 
     service *service_;
-    
-  public:
-    control ( service& s );
-    virtual ~control() {};
-    
+        
     private:
       control(const control&);
       control& operator=(const control&);

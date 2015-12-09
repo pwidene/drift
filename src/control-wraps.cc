@@ -10,32 +10,27 @@ extern logging::sources::severity_logger<drift::severity_level> lg;
 
 namespace drift {
 
-  template<int handler_wrapper( void *msg, attr_list attrs )>
-  static int
-  action_handler_wrap ( CManager cm, void *msg, void *cdata, attr_list attrs )
-  {
-    shared_ptr<control> C (dynamic_cast<control*> cdata);
-    return C->handler_wrapper( msg, attrs );
-  }
+#define ACTION_HELPER(theformats,handler) \
+  EVassoc_terminal_action ( cm, st, drift::##theformats_formats, \
+			    [](CManager cm, void* msg, void* cdata, attr_list a) \
+			    {						\
+			      shared_ptr<control> C (dynamic_cast<control*> ( cdata ) ); \
+			      return C->##handler( msg, a ); \
+			    },						\
+			    this );					\
 
+  
   void
   control::action_setup ( EVstone st )
   {
     CManager cm = service_->cm();
-    EVassoc_terminal_action ( cm, st, drift::put_i_immediate_formats,
-			      control::action_handler_wrap<&control::put_immediate_action>,
-			      this );
-    EVassoc_terminal_action ( cm, st, drift::put_i_immediate_formats,
-			      control::action_handler_wrap<&control::get_immediate_action>,
-			      this );
-    EVassoc_terminal_action ( cm, st, drift::simple_part_xfer_formats,
-			      control::action_handler_wrap<&control::simple_part_xfer_action>,
-			      this );
-    EVassoc_terminal_action ( cm, st, drift::complex_part_xfer_formats,
-			      control::action_handler_wrap<&control::complex_part_xfer_action>,
-			      this );
-  }
 
+    ACTION_HELPER(put_i_immediate,put_immediate_action);
+    ACTION_HELPER(put_i_immediate,get_immediate_action);
+    ACTION_HELPER(simple_part_xfer,simple_part_xfer_action);
+    ACTION_HELPER(complex_part_xfer,complex_part_xfer_action);
+
+  }
 }
 
   
