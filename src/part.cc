@@ -56,7 +56,19 @@ part::store()
     /*
      * do the redox async store
      */
-    rdx_.command<string>
+    try {
+      auto& mtime = mtime_; // local ref for lambda capture
+      
+      rdx_.command<string>({"SET", tag_.to_string() + ':' + "immediate", immediate_.asString(),},
+			   [mtime](redox::Command<string>& c) {
+			     if (!c.ok()) throw c;
+			     mtime = 
+			   });
+    }
+    catch (redox::Command<string>& cex) {
+      // right now do nothing
+    }
+					    
 
   //  An empty node_uri means we haven't been stored yet
   bool creating;
