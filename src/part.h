@@ -61,6 +61,10 @@ namespace drift {
     // who created me
     drift::PartGraph& pgraph_;
 
+    // Reference to the Redox server owned by the service instance who
+    // created me
+    Redox& rdx_;
+
   private:
     
     part& operator= ( const part& );

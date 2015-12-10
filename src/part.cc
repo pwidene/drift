@@ -42,7 +42,21 @@ void
 part::store()
 {
   
-  
+  /*
+   *  build a redis key prefixed by the UUID '<uuid>:immediate' to index the stored value
+   *  issue the appropriate redis command
+   *
+   *  any properties or metadata get stored at '<uuid>:properties' and '<uuid>:metadata' 
+   *  adopt/abandon methods manage the child parts
+   *
+   *  redis should handle any key existence issues for us
+   */
+
+  if (dirty_[Immediate]) {
+    /*
+     * do the redox async store
+     */
+    rdx_.command<string>
 
   //  An empty node_uri means we haven't been stored yet
   bool creating;
