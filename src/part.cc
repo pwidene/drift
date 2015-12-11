@@ -83,7 +83,8 @@ part::load()
 			  [](redox::Command<string>& c) {
 			    if (!c.ok()) throw c;
 			  });
-
+    dirty_[Immediate] = 0;
+    
     // assign c.reply() to the immediate_ member
     // throw should protect us against errors
     // what to do about state mask?
@@ -98,42 +99,16 @@ part::load()
 void
 part::remove()
 {
-  std::ostringstream ostr;
-  ostr << part::get_n4j_rest_uri() << "node/" << node_id_;
-  web::http::client::http_client cli ( ostr.str() );
-  web::http::http_request req ( web::http::methods::DELETE );
+  try {
+    rdx_.command<string>( {"DEL", tag_.to_string() + ":immediate" },
+			  [](redox::Command<string>& c) {
+			    if (!c.ok()) throw c;
+			  });
 
-  req.headers().add ( "Accept", "application/json" );
-
-  pplx::task<void> ptask = 
-    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() == web::http::status_codes::Conflict ) {
-	  throw response;
-	}
-	if ( response.status_code() == web::http::status_codes::NoContent ) {
-	  return response.extract_json();
-	}
-	return pplx::task_from_result(json::value());
-      });
-
-  /*
-    .then([](pplx::task<json::value> previousTask) {
-	  try {
-	    const json::value& v = previousTask.get();
-	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
-	      const json::value &str = iter->first;
-	      const json::value &val = iter->second;
-	      std::cout << "key: " << str.as_string() << ", value = " << val.to_string() << std::endl;
-	    }
-	  }
-	  catch (const http_exception& e) {
-	    std::ostringstream ss;
-	    ss << e.what() << endl;
-	    std::cout << ss.str();
-	  }
-	}
-	);
-  */
+  }
+  catch (redox::Command<string>& cex) {
+    // again right now do nothing
+  }
 }
 
 
@@ -160,42 +135,16 @@ part::adopt ( part& child )
 void
 part::abandon()
 {
-  std::for_each ( parts_.begin(), parts_.end(), 
-		  [](std::pair<std::string, part*> p) {
-		      
-		    web::http::client::http_client cli (p->second);
-		    web::http::http_request req ( web::http::methods::DELETE );
-		    req.headers().add ( "Accept", "application/json" );
 
-		    pplx::task<void> ptask = 
-		      client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-			  if ( response.status_code() != web::http::status_codes::NoContent) {
-			    throw response;
-			  }
-			  return pplx::task_from_result(json::value());
-			});
-		  })
 }
 
 void
 part::abandon ( part& child )
 {
-  /* 
+  /*
    *  To be clear, here, what we're doing is severing the relationship between 
    *    me and this particular child part.  Neither a shallow nor deep deletion.
    */
-
-  web::http::client::http_client cli ( parts_[&child] ); 
-  web::http::http_request req ( web::http::methods::DELETE );
-  req.headers().add ( "Accept", "application/json" );
-
-  pplx::task<void> ptask = 
-    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() != web::http::status_codes::NoContent) {
-	  throw response;
-	}
-	return pplx::task_from_result(json::value());
-      });
 }
       
 
