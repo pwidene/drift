@@ -30,94 +30,55 @@ namespace drift {
     }  
   }
 
-void
-part::json_props ( Json::Value& props )
-{
-  props["tag"] = tag_.to_string();
-  props["name"] = name_;
-}
-
-
-void
-part::store()
-{
-  
-  /*
-   *  build a redis key prefixed by the UUID '<uuid>:immediate' to index the stored value
-   *  issue the appropriate redis command
-   *
-   *  any properties or metadata get stored at '<uuid>:properties' and '<uuid>:metadata' 
-   *  adopt/abandon methods manage the child parts
-   *
-   *  redis should handle any key existence issues for us
-   */
-
-  if (dirty_[Immediate]) {
-    /*
-     * do the redox async store
-     */
-    try {
-      auto& mtime = mtime_; // local ref for lambda capture
-      
-      rdx_.command<string>({"SET", tag_.to_string() + ':' + "immediate", immediate_.asString(),},
-			   [mtime](redox::Command<string>& c) {
-			     if (!c.ok()) throw c;
-			     mtime = 
-			   });
-    }
-    catch (redox::Command<string>& cex) {
-      // right now do nothing
-    }
-					    
-
-  //  An empty node_uri means we haven't been stored yet
-  bool creating;
-  if (node_uri_.empty()) {
-    creating = true;
-    req.set_method ( web::http::methods::POST );
-  } else {
-    creating = false;
-    req.set_method ( web::http::methods::PUT );
+  void
+  part::json_props ( Json::Value& props )
+  {
+    props["tag"] = tag_.to_string();
+    props["name"] = name_;
   }
 
-  req.headers().add ( "Accept", "application/json" );
-  req.headers().add ( "Content-Type", "application/json" );
 
-  web::json::value props;
-  json_props ( props );
-    
-  req.set_body ( props );
+  void
+  part::store()
+  {
+  
+    /*
+     *  build a redis key prefixed by the UUID '<uuid>:immediate' to index the stored value
+     *  issue the appropriate redis command
+     *
+     *  any properties or metadata get stored at '<uuid>:properties' and '<uuid>:metadata' 
+     *  adopt/abandon methods manage the child parts
+     *
+     *  redis should handle any key existence issues for us
+     */
 
-  pplx::task<void> ptask = 
-    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() == web::http::status_codes::Created and creating) {
-
-	  // get the URI from the REST response and save it
-	  web::http::http_headers::iterator i = response.find("Location");
-	  if (i != response.end()) {
-	    node_uri_ = i->second;
-	  }
-
-	  ctime_ = mtime_ = boost::chrono::system_clock::now();
-
-	} else if ( response.status_code() == web::http::status_codes::NoContent and not creating ) {
-	  
-	  // this was a triumph, I'm making a note here, HUGE SUCCESS
-	  mtime_ = boost::chrono::system_clock::now();
-
-	} else {
-	  
-	  // We're in uncharted territory, pull the ripcord
-	  throw response;
-	}
-      });
-}
+    if (dirty_[Immediate]) {
+      /*
+       * do the redox async store
+       */
+      try {
+	auto& mtime = mtime_; // local ref for lambda capture
+      
+	rdx_.command<string>({"SET", tag_.to_string() + ':' + "immediate", immediate_.asString(),},
+			     [mtime](redox::Command<string>& c) {
+			       if (!c.ok()) throw c;
+			       mtime = 
+				 });
+      }
+      catch (redox::Command<string>& cex) {
+	// right now do nothing
+      }
+    }
 
 
 
 void
 part::load()
 {
+  try {
+    
+
+
   std::ostringstream ostr;
   ostr << part::get_n4j_rest_uri() << node_id_;
   web::http::client::http_client cli ( ostr.str() );
