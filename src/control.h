@@ -1,12 +1,14 @@
 #ifndef __CONTROL_H__
 #define __CONTROL_H__
 
+#include <memory>
+
 #include "atl.h"
 #include "evpath.h"
 
 #include "internal.h"
+#include "service.h"
 
-class service;
 
 namespace drift {
 
@@ -26,7 +28,7 @@ namespace drift {
     void action_setup( CManager, EVstone );
 
     template<typename T>
-      void put_immediate_action( T msg, attr_list )
+      void put_immediate_action( T msg, attr_list al )
       {
 	service_.put_immediate( msg->val, msg->path, al );
       };

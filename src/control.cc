@@ -2,7 +2,6 @@
 
 #include "control.h"
 #include "formats.h"
-#include "service.h"
 
 using namespace std;
 
@@ -10,7 +9,7 @@ extern logging::sources::severity_logger<drift::severity_level> lg;
 
 namespace drift {
   
-  control::control ( drift::service& s ) 
+  control::control ( service& s ) 
     : service_ (s)
   {
     CManager myCM = service_.cm();
@@ -31,7 +30,7 @@ namespace drift {
     CMadd_periodic_task ( myCM, 2, 0,
 			  [](CManager cm, void* cdata)
 			  {
-			    shared_ptr<control> C = reinterpret_cast<control*>(cdata);
+			    control *C = reinterpret_cast<control*>(cdata);
 			    time_t ticks = boost::chrono::system_clock::to_time_t ( boost::chrono::system_clock::now() );
 			    
 			    drift::heartbeat hb;
@@ -59,8 +58,8 @@ namespace drift {
     EVstone remote_stone;
     char *clist_str;
   
-    shared_ptr<drift::heartbeat> hbp = reinterpret_cast<drift::heartbeat_ptr>(vevent);
-    shared_ptr<control> C = reinterpret_cast<control*>(client_data);
+    drift::heartbeat_ptr hbp = reinterpret_cast<drift::heartbeat_ptr>(vevent);
+    control *C = reinterpret_cast<control*>(client_data);
   
     get_int_attr ( attrs, C->remote_stone_atom_, &remote_stone );
     get_string_attr ( attrs, C->remote_contact_atom_, &clist_str );
