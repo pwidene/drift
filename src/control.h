@@ -24,6 +24,13 @@ namespace drift {
   protected:
 
     void action_setup( CManager, EVstone );
+
+    template<typename T>
+      void put_immediate_action( T msg, attr_list )
+      {
+	service_.put_immediate( msg->val, msg->path, al );
+      };
+
     
     /*
      *  The service is the source for:
@@ -57,7 +64,7 @@ namespace drift {
     atom_t remote_contact_atom_;
     
 
-    service *service_;
+    service& service_;
         
     private:
       control(const control&);

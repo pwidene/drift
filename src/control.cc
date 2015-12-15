@@ -13,12 +13,12 @@ namespace drift {
   control::control ( drift::service& s ) 
     : service_ (s)
   {
-    CManager myCM = service_->cm();
+    CManager myCM = service_.cm();
 
     hb_split_stone_ = EValloc_stone( myCM );
     hb_split_action_ = EVassoc_split_action ( myCM, hb_split_stone_, NULL );
-    remote_stone_atom_ = attr_atom_from_string("d-stone");
-    remote_contact_atom_ = attr_atom_from_string("d-client-contact-list");
+    remote_stone_atom_ = attr_atom_from_string("drift:stone");
+    remote_contact_atom_ = attr_atom_from_string("drift:client-contact-list");
 
     heartbeat_source_ = EVcreate_submit_handle ( myCM, hb_split_stone_, heartbeat_formats );
     advert_source_ = EVcreate_submit_handle ( myCM, hb_split_stone_, advert_formats );
@@ -86,21 +86,39 @@ namespace drift {
   void
   control::action_setup ( CManager myCM, EVstone st )
   {
+    /*
+     * I really wanted to do this with a templated function that would receive a pointer
+     * to the callback. However, I couldn't figure out how to make that work when the
+     * callback was going to be a class instance method. There's probably a way to make it
+     * work with std::bind but this is just as kludgy and got me back to real work
+     * faster.
+     */
 
-#define ACTION_HELPER(theformats,handler)			 \
-    EVassoc_terminal_action ( myCM, st, drift::##theformats_formats,	\
+#define ACTION_HELPER(FMT,ACTION)						\
+    EVassoc_terminal_action ( myCM, st, drift::##FMT##_formats,	\
 			      [](CManager cm, void* msg, void* cdata, attr_list a) \
 			      {						\
 				shared_ptr<control> C (dynamic_cast<control*> ( cdata ) ); \
-				return C->##handler( msg, a );		\
+				FMT##_ptr p = reinterpret_cast<FMT##_ptr> ( msg ); \
+				return C->##action( msg, a );		\
 			      },					\
 			      this );   
 
-    ACTION_HELPER(put_i_immediate,put_immediate_action);
-    ACTION_HELPER(put_i_immediate,get_immediate_action);
+    ACTION_HELPER(put_i_immediate,put_i_immediate_action);
+    ACTION_HELPER(put_i_immediate,get_i_immediate_action);
     ACTION_HELPER(simple_part_xfer,simple_part_xfer_action);
     ACTION_HELPER(complex_part_xfer,complex_part_xfer_action);
 
   }
 
+
+  void
+  control::put_i_immediate_action( put_i_immediate_ptr msg, attr_list al )
+  {
+    s.put_immediate( msg->val, msg->path, al );
+  }
+
+  void
+  control::get_i_immediate_action
+  
 }

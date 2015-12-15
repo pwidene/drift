@@ -100,6 +100,7 @@ namespace drift {
 
   };
 
+  
   class immediate_part : public part {
 
   public:
@@ -111,11 +112,10 @@ namespace drift {
     virtual void load();
     virtual void store();
 
-    part& operator= ( unsigned long u ) { immediate_["unsigned-long"] = web::json::value::parse ( std::to_string ( u ) ); }
-    part& operator= ( long l ) { immediate_["long"] = web::json::value::parse ( std::to_string ( l ) ); }
-    part& operator= ( std::string& s ) { immediate_["string"] = web::json::value::parse ( s ); };
-    part& operator= ( double d ) { immediate_["double"] = web::json::value::parse ( std::to_string ( d ) ); };
-
+    template<typename X>
+    part&
+    operator= (const X& x) { immediate_ = x ; }
+    
   public:
 
     Json::Value immediate_;

@@ -10,12 +10,20 @@ extern logging::sources::severity_logger<drift::severity_level> lg;
 
 namespace drift {
 
-#define ACTION_HELPER(theformats,handler) \
+  /*
+   * I really wanted to do this with a templated function that would receive a pointer
+   * to the callback. However, I couldn't figure out how to make that work when the
+   * callback was going to be a class instance method. There's probably a way to make it
+   * work with std::bind but this is just as kludgy and got me back to real work
+   * faster.
+   */
+
+#define ACTION_HELPER(theformats,action)				 \
   EVassoc_terminal_action ( cm, st, drift::##theformats_formats, \
 			    [](CManager cm, void* msg, void* cdata, attr_list a) \
 			    {						\
 			      shared_ptr<control> C (dynamic_cast<control*> ( cdata ) ); \
-			      return C->##handler( msg, a ); \
+			      return C->##action( msg, a ); \
 			    },						\
 			    this );					\
 

@@ -72,4 +72,27 @@ namespace drift {
     CMCondition_signal ( drift::service::get_service()->cm(), drift::service::terminate_condition_ );
   }
 
+  void
+  service::put_immediate( long int, string&, attr_list )
+  {}
+  
+  void
+  service::put_immediate( double, string&, attr_list )
+  {}
+  
+  service::put_immediate( string&, string&, attr_list )
+  {}
+
+  void
+  service::get_immediate( long int &, string &, attr_list )
+  {}
+  
+  void
+  service::get_immediate( double&, string&, attr_list )
+  {}
+
+  void
+  service::get_immediate( string&, string&, attr_list )
+  {}
+
 }

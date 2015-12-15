@@ -73,8 +73,14 @@ main (int argc , char *argv[])
 
   po::notify( opts_vm );
     
-  /* Catch SIGINT, SIGTERM */  
-  new_action.sa_handler = drift::service::close_handler;
+  unique_ptr<drift::service> instance ( new drift::service( sp ) );
+
+    /* Catch SIGINT, SIGTERM */  
+  new_action.sa_handler = [](int signo)
+    {
+      CMCondition_signal ( instance->cm(), service::terminate_condition_ );
+    };
+  
   sigemptyset(&new_action.sa_mask);
   
   sigaction(SIGINT,NULL,&old_action);
@@ -85,7 +91,6 @@ main (int argc , char *argv[])
   if (old_action.sa_handler != SIG_IGN)
     sigaction(SIGTERM,&new_action,NULL);
 
-  unique_ptr<drift::service> instance ( new drift::service( sp ) );
   instance->begin();
 
   return 0;

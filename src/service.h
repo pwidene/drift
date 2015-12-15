@@ -55,6 +55,18 @@ namespace drift {
     typedef boost::adjacency_list < listS, listS, directedS, drift_props, drift_props > PartGraph;
     PartGraph pgraph_;
 
+    /*
+     *  actions interface
+     */
+    void put_immediate( long int, string&, attr_list );
+    void put_immediate( double, string&, attr_list );
+    void put_immediate( string&, string&, attr_list );
+
+    void get_immediate( long int &, string &, attr_list );
+    void get_immediate( double&, string&, attr_list );
+    void get_immediate( string&, string&, attr_list );
+
+    
   protected:
     
     CManager cm_;
