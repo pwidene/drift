@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
@@ -13,8 +14,6 @@
 #include "boost/log/utility/string_literal.hpp"
 #include "boost/chrono/system_clocks.hpp"
 #include "boost/scoped_ptr.hpp"
-
-//#include "mongo/client/dbclient.h"
 
 #include "service.h"
 
@@ -39,7 +38,7 @@ main (int argc , char *argv[])
 {
   struct sigaction new_action, old_action;
   int bootstrap_node = 0;
-  service_params sp;
+  drift::service_params sp;
 
   /*
    *  Start logging services
@@ -76,11 +75,7 @@ main (int argc , char *argv[])
   unique_ptr<drift::service> instance ( new drift::service( sp ) );
 
     /* Catch SIGINT, SIGTERM */  
-  new_action.sa_handler = [](int signo)
-    {
-      CMCondition_signal ( instance->cm(), service::terminate_condition_ );
-    };
-  
+  new_action.sa_handler = drift::service::close_handler;
   sigemptyset(&new_action.sa_mask);
   
   sigaction(SIGINT,NULL,&old_action);

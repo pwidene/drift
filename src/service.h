@@ -24,15 +24,15 @@ namespace drift {
   class part;
   class control;
 
-  struct {
+  struct service_params {
     string redis_host;
     unsigned short redis_port;
-  } service_params;
+  };
   
-  struct {
+  struct drift_props {
     string json;
     string attrs;
-  } drift_props;
+  };
 
   /*!
    The Drift service class. Represents a single service instance.
@@ -40,7 +40,7 @@ namespace drift {
   class service {
 
   public:
-    service();
+    service( service_params& );
     virtual ~service();
 
     static void close_handler ( int sig );
@@ -52,7 +52,7 @@ namespace drift {
 
     unique_ptr<control> c_;
 
-    typedef boost::adjacency_list < listS, listS, directedS, drift_props, drift_props > PartGraph;
+    typedef boost::adjacency_list < boost::listS, boost::listS, boost::directedS, drift_props, drift_props > PartGraph;
     PartGraph pgraph_;
 
     /*
