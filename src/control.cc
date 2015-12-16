@@ -14,16 +14,29 @@ namespace drift {
   {
     CManager myCM = service_.cm();
 
-    hb_split_stone_ = EValloc_stone( myCM );
-    hb_split_action_ = EVassoc_split_action ( myCM, hb_split_stone_, NULL );
     remote_stone_atom_ = attr_atom_from_string("drift:stone");
     remote_contact_atom_ = attr_atom_from_string("drift:client-contact-list");
 
-    heartbeat_source_ = EVcreate_submit_handle ( myCM, hb_split_stone_, heartbeat_formats );
-    advert_source_ = EVcreate_submit_handle ( myCM, hb_split_stone_, advert_formats );
+    keystone_ = EValloc_stone( myCM );
+    //    EVassoc_terminal_action( myCM, keystone_
+    hb_split_action_ = EVassoc_split_action ( myCM, keystone_, NULL );
+    heartbeat_source_ = EVcreate_submit_handle ( myCM, keystone_, heartbeat_formats );
 
-    action_setup( myCM, stone_ );
-    
+    advert_source_ = EVcreate_submit_handle ( myCM, keystone_, advert_formats );
+    advert_split_action_ = EVassoc_split_action ( myCM, keystone_, NULL );
+    action_setup( myCM, keystone_ );
+
+    /*
+     * install action handler for heartbeat add request
+     */
+    EVassoc_terminal_action ( myCM, keystone_, advert_formats,
+			      [](CManager cm, void *msg, void *cdata, attr_list al) {
+				shared_ptr<control> C ( reinterpret_cast<control*>( cdata ) );
+				shared_ptr<advert> msg ( reinterpret_cast<advert_ptr>( msg ) );
+				C->add_heartbeat_listener( msg, al );
+			      },
+			      this );
+				
     /* 
      *  CM periodic task for heartbeat
      */
@@ -31,7 +44,8 @@ namespace drift {
 			  [](CManager cm, void* cdata)
 			  {
 			    control *C = reinterpret_cast<control*>(cdata);
-			    time_t ticks = boost::chrono::system_clock::to_time_t ( boost::chrono::system_clock::now() );
+			    time_t ticks =
+			      boost::chrono::system_clock::to_time_t ( boost::chrono::system_clock::now() );
 			    
 			    drift::heartbeat hb;
 			    hb.ts = ticks;
@@ -53,13 +67,10 @@ namespace drift {
 
 
   int
-  control::handle_heartbeat ( CManager cm, void *vevent, void *client_data, attr_list attrs )
+  control::add_heartbeat_listener ( advert_ptr msg, attr_list al )
   {
     EVstone remote_stone;
     char *clist_str;
-  
-    drift::heartbeat_ptr hbp = reinterpret_cast<drift::heartbeat_ptr>(vevent);
-    control *C = reinterpret_cast<control*>(client_data);
   
     get_int_attr ( attrs, C->remote_stone_atom_, &remote_stone );
     get_string_attr ( attrs, C->remote_contact_atom_, &clist_str );

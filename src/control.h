@@ -18,7 +18,7 @@ namespace drift {
     control ( service& s );
     virtual ~control() {};
 
-    int handle_heartbeat ( CManager cm, void *vevent, void *client_data, attr_list attrs );
+    void add_hb_listener ( advert_ptr, attr_list );
 
     int handle_advert ( CManager cm, void *vevent, void *cdata, attr_list attrs );
     static void submit_advert ( CManager cm, void *cdata );
@@ -57,9 +57,11 @@ namespace drift {
      *    -- these map (eventually) to the handler stack which manipulates data
      *
      */
-    EVstone hb_split_stone_;
+    EVstone keystone_;
     EVaction hb_split_action_;
     EVsource heartbeat_source_;
+
+    EVstone request_stone_;
     EVsource advert_source_;
 
     atom_t remote_stone_atom_;
