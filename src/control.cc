@@ -17,14 +17,16 @@ namespace drift {
     remote_stone_atom_ = attr_atom_from_string("drift:stone");
     remote_contact_atom_ = attr_atom_from_string("drift:client-contact-list");
 
-    keystone_ = EValloc_stone( myCM );
+    hb_stone_ = EValloc_stone( myCM );
     //    EVassoc_terminal_action( myCM, keystone_
-    hb_split_action_ = EVassoc_split_action ( myCM, keystone_, NULL );
-    heartbeat_source_ = EVcreate_submit_handle ( myCM, keystone_, heartbeat_formats );
+    hb_split_action_ = EVassoc_split_action ( myCM, hb_stone_, NULL );
+    heartbeat_source_ = EVcreate_submit_handle ( myCM, hb_stone_, heartbeat_formats );
 
-    advert_source_ = EVcreate_submit_handle ( myCM, keystone_, advert_formats );
-    advert_split_action_ = EVassoc_split_action ( myCM, keystone_, NULL );
-    action_setup( myCM, keystone_ );
+    advert_source_ = EVcreate_submit_handle ( myCM, ad_stone_, advert_formats );
+    advert_split_action_ = EVassoc_split_action ( myCM, ad_stone_, NULL );
+
+    rq_stone_ = EValloc_stone( myCM );
+    action_setup( myCM, rq_stone_ );
 
     /*
      * install action handler for heartbeat add request
@@ -43,13 +45,16 @@ namespace drift {
     CMadd_periodic_task ( myCM, 2, 0,
 			  [](CManager cm, void* cdata)
 			  {
-			    control *C = reinterpret_cast<control*>(cdata);
+			    shared_ptr<control> C (reinterpret_cast<control*>(cdata));
 			    time_t ticks =
 			      boost::chrono::system_clock::to_time_t ( boost::chrono::system_clock::now() );
 			    
 			    drift::heartbeat hb;
 			    hb.ts = ticks;
 			    hb.flags = 0;
+
+			    attr_list al;
+			    
 			    
 			    EVsubmit ( C->heartbeat_source_, &hb, NULL );
 
