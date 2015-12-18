@@ -16,14 +16,17 @@ namespace drift {
 
     remote_stone_atom_ = attr_atom_from_string("drift:stone");
     remote_contact_atom_ = attr_atom_from_string("drift:client-contact-list");
+    hb_stone_atom_ = attr_atom_from_string( "drift:hb-stone" );
+    ad_stone_atom_ = attr_atom_from_string( "drift:ad-stone" );
+    rq_stone_atom_ = attr_atom_from_string( "drift:rq-stone"  );
+    driftd_contact_atom_ = attr_atom_from_string( "drift:contact-list" );
 
     hb_stone_ = EValloc_stone( myCM );
-    //    EVassoc_terminal_action( myCM, keystone_
     hb_split_action_ = EVassoc_split_action ( myCM, hb_stone_, NULL );
-    heartbeat_source_ = EVcreate_submit_handle ( myCM, hb_stone_, heartbeat_formats );
+    hb_source_ = EVcreate_submit_handle ( myCM, hb_stone_, heartbeat_formats );
 
-    advert_source_ = EVcreate_submit_handle ( myCM, ad_stone_, advert_formats );
-    advert_split_action_ = EVassoc_split_action ( myCM, ad_stone_, NULL );
+    ad_source_ = EVcreate_submit_handle ( myCM, ad_stone_, advert_formats );
+    ad_split_action_ = EVassoc_split_action ( myCM, ad_stone_, NULL );
 
     rq_stone_ = EValloc_stone( myCM );
     action_setup( myCM, rq_stone_ );
@@ -31,11 +34,11 @@ namespace drift {
     /*
      * install action handler for heartbeat add request
      */
-    EVassoc_terminal_action ( myCM, keystone_, advert_formats,
-			      [](CManager cm, void *msg, void *cdata, attr_list al) {
+    EVassoc_terminal_action ( myCM, hb_stone_, advert_formats,
+			      [](CManager cm, void *vevent, void *cdata, attr_list al) -> int {
 				shared_ptr<control> C ( reinterpret_cast<control*>( cdata ) );
-				shared_ptr<advert> msg ( reinterpret_cast<advert_ptr>( msg ) );
-				C->add_heartbeat_listener( msg, al );
+				C->add_heartbeat_listener( reinterpret_cast<advert*>( vevent ), al );
+				return 1;
 			      },
 			      this );
 				
@@ -49,14 +52,18 @@ namespace drift {
 			    time_t ticks =
 			      boost::chrono::system_clock::to_time_t ( boost::chrono::system_clock::now() );
 			    
-			    drift::heartbeat hb;
-			    hb.ts = ticks;
-			    hb.flags = 0;
+			    drift::advert ad;
+			    ad.meta.ts = ticks;
+			    ad.meta.flags = 0;
+			    ad.service_endpoint = nullptr;
+			    ad.endpoint_stone = -1;
 
 			    attr_list al;
+			    set_int_attr( al, C->hb_stone_atom_, C->hb_stone_ );
+			    set_int_attr( al, C->ad_stone_atom_, C->ad_stone_ );
+			    set_int_attr( al, C->rq_stone_atom_, C->rq_stone_ );
 			    
-			    
-			    EVsubmit ( C->heartbeat_source_, &hb, NULL );
+			    EVsubmit ( C->hb_source_, &ad, al );
 
 			    // can i get away with this? extern scope of lg inside lambda?
 			    BOOST_LOG_SEV(lg, drift::debug) << "Heartbeat submission" << endl;
@@ -71,29 +78,31 @@ namespace drift {
   }
 
 
-  int
+  void
   control::add_heartbeat_listener ( advert_ptr msg, attr_list al )
   {
     EVstone remote_stone;
     char *clist_str;
-  
-    get_int_attr ( attrs, C->remote_stone_atom_, &remote_stone );
-    get_string_attr ( attrs, C->remote_contact_atom_, &clist_str );
+    CManager cm = service_.cm();
+    
+    get_int_attr ( al, remote_stone_atom_, &remote_stone );
+    get_string_attr ( al, remote_contact_atom_, &clist_str );
 
-    new_bridge = EValloc_stone( cm );
+    auto new_bridge = EValloc_stone( cm );
     EVassoc_bridge_action ( cm, new_bridge, attr_list_from_string(clist_str), remote_stone );
-    EVaction_add_split_target ( cm, C->hb_split_stone_, hb_split_action_, new_bridge );
-    return 1;
+    EVaction_add_split_target ( cm, hb_stone_, hb_split_action_, new_bridge );
   }
 
 
   int
   control::handle_advert ( CManager cm, void *vevent, void *cdata, attr_list attrs )
-  {}
+  {
+    return 1;
+  }
 
 
   void
-  control::submit_advert ( CManager cm, void *cdata );
+  control::submit_advert ( CManager cm, void *cdata )
   {}
 
 
@@ -110,30 +119,19 @@ namespace drift {
      */
 
 #define ACTION_HELPER(FMT,ACTION)						\
-    EVassoc_terminal_action ( myCM, st, drift::##FMT##_formats,	\
-			      [](CManager cm, void* msg, void* cdata, attr_list a) \
-			      {						\
-				shared_ptr<control> C (dynamic_cast<control*> ( cdata ) ); \
+    EVassoc_terminal_action ( myCM, st, FMT##_formats,	\
+			      [](CManager cm, void* msg, void* cdata, attr_list a) -> int { \
+				shared_ptr<control> C (reinterpret_cast<control*> ( cdata ) ); \
 				FMT##_ptr p = reinterpret_cast<FMT##_ptr> ( msg ); \
-				return C->##action( msg, a );		\
+				return C->ACTION (p,a);		\
 			      },					\
 			      this );   
 
-    ACTION_HELPER(put_i_immediate,put_i_immediate_action);
-    ACTION_HELPER(put_i_immediate,get_i_immediate_action);
-    ACTION_HELPER(simple_part_xfer,simple_part_xfer_action);
-    ACTION_HELPER(complex_part_xfer,complex_part_xfer_action);
+    ACTION_HELPER(put_i_immediate,put_immediate_action)
+    //    ACTION_HELPER(put_i_immediate,get_i_immediate_action);
+    //    ACTION_HELPER(simple_part_xfer,simple_part_xfer_action);
+    //    ACTION_HELPER(complex_part_xfer,complex_part_xfer_action);
 
   }
 
-
-  void
-  control::put_i_immediate_action( put_i_immediate_ptr msg, attr_list al )
-  {
-    s.put_immediate( msg->val, msg->path, al );
-  }
-
-  void
-  control::get_i_immediate_action
-  
 }
