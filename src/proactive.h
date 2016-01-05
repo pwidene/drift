@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "json.h"
+#include "json/json.h"
 
 extern "C" {
 #include "evpath.h"

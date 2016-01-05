@@ -6,16 +6,21 @@
 #include <unordered_map>
 #include <bitset>
 
+#include "json/json.h"
+#include "redox.hpp"
+
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
 #include "boost/chrono.hpp"
-#include "boost/adjacency_list.hpp"
+#include "boost/graph/adjacency_list.hpp"
 #include "boost/tuple/tuple.hpp"
 
 
-#include "json/json.h"
 
 #include "internal.h"
+#include "pgraph.h"
+
+#include "proactive.h"
 
 namespace drift {
 
@@ -42,7 +47,7 @@ namespace drift {
     boost::uuids::uuid tag_;
     
     // Pointer to my vertex in the service's part graph
-    boost::vertex_descriptor v_;
+    drift::PartGraph::vertex_descriptor v_;
 
     // Creation and modification times
     boost::chrono::system_clock::time_point ctime_, mtime_;
@@ -87,7 +92,7 @@ namespace drift {
 
   public:
 
-    Json::value storage_meta_;
+    Json::Value storage_meta_;
 
   protected:
 

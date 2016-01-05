@@ -13,7 +13,7 @@ namespace drift {
   service::~service() {}
 
   service::service( service_params& sp )
-    : c_ (NULL), sp_ (sp)
+    : c_ (new control (*this)), sp_ (sp)
   {}
 
 
@@ -29,8 +29,6 @@ namespace drift {
   {
     attr_list listen_info;
     cm_ = CManager_create();
-
-    c_ = new control (this);
 
     /*
      *  Connect to the redis service
@@ -69,7 +67,7 @@ namespace drift {
   service::close_handler( int signo ) 
   {
     BOOST_LOG_SEV(lg, drift::info) << "Shutting down.";
-    CMCondition_signal ( drift::service::get_service()->cm(), drift::service::terminate_condition_ );
+    CMCondition_signal ( cm_, drift::service::terminate_condition_ );
   }
 
   void
@@ -79,7 +77,8 @@ namespace drift {
   void
   service::put_immediate( double, string&, attr_list )
   {}
-  
+
+  void
   service::put_immediate( string&, string&, attr_list )
   {}
 

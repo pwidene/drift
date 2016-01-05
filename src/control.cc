@@ -122,7 +122,7 @@ namespace drift {
     EVassoc_terminal_action ( myCM, st, FMT##_formats,	\
 			      [](CManager cm, void* msg, void* cdata, attr_list a) -> int { \
 				shared_ptr<control> C (reinterpret_cast<control*> ( cdata ) ); \
-				FMT##_ptr p = reinterpret_cast<FMT##_ptr> ( msg ); \
+				auto p = reinterpret_cast<FMT##_ptr> ( msg ); \
 				return C->ACTION (p,a);		\
 			      },					\
 			      this );   

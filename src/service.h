@@ -15,6 +15,8 @@
 #include "evpath.h"
 
 #include "internal.h"
+#include "pgraph.h"
+
 #include "trie.h"
 
 using namespace std;
@@ -29,10 +31,6 @@ namespace drift {
     unsigned short redis_port;
   };
   
-  struct drift_props {
-    string json;
-    string attrs;
-  };
 
   /*!
    The Drift service class. Represents a single service instance.
@@ -43,7 +41,7 @@ namespace drift {
     service( service_params& );
     virtual ~service();
 
-    static void close_handler ( int sig );
+    void close_handler ( int sig );
     
     CManager cm() const { return cm_; };
     void begin();
@@ -52,7 +50,7 @@ namespace drift {
 
     unique_ptr<control> c_;
 
-    typedef boost::adjacency_list < boost::listS, boost::listS, boost::directedS, drift_props, drift_props > PartGraph;
+
     PartGraph pgraph_;
 
     /*

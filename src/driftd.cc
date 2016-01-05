@@ -32,6 +32,7 @@ usage(char* prog)
 }
 
 
+drift::service *instance;
 
 int 
 main (int argc , char *argv[]) 
@@ -72,10 +73,10 @@ main (int argc , char *argv[])
 
   po::notify( opts_vm );
     
-  unique_ptr<drift::service> instance ( new drift::service( sp ) );
-
-    /* Catch SIGINT, SIGTERM */  
-  new_action.sa_handler = drift::service::close_handler;
+  instance = new drift::service( sp );
+  
+  /* Catch SIGINT, SIGTERM */  
+  new_action.sa_handler = [](int signo) { instance->close_handler( signo ); };
   sigemptyset(&new_action.sa_mask);
   
   sigaction(SIGINT,NULL,&old_action);
@@ -90,3 +91,4 @@ main (int argc , char *argv[])
 
   return 0;
 }
+

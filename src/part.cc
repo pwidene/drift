@@ -1,6 +1,3 @@
-
-using namespace std;
-
 #include <algorithm>
 
 
@@ -8,6 +5,8 @@ using namespace std;
 
 #include "internal.h"
 #include "part.h"
+
+using namespace std;
 
 extern logging::sources::severity_logger<drift::severity_level> lg;
 
