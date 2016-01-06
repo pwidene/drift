@@ -11,6 +11,7 @@
 
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
+#include "boost/uuid/uuid_io.hpp"
 #include "boost/chrono.hpp"
 #include "boost/graph/adjacency_list.hpp"
 #include "boost/tuple/tuple.hpp"
@@ -28,15 +29,21 @@ namespace drift {
 
   public:
 
-    part ( const bool now = false );
-    part ( const boost::uuids::uuid&, bool now = false );
+    part ( drift::PartGraph&,
+	   redox::Redox&,
+	   const bool now = false );
+    part ( const boost::uuids::uuid&,
+	   drift::PartGraph&,
+	   redox::Redox&,
+	   bool now = false );
     virtual ~part();
 
-    virtual void load();
-    virtual void store();
+    virtual void load() = 0;
+    virtual void store() = 0;
     virtual void adopt( part& );
     virtual void abandon ( part& );
     virtual void abandon();
+    virtual void remove();
 
   public:
 
@@ -68,7 +75,7 @@ namespace drift {
 
     // Reference to the Redox server owned by the service instance who
     // created me
-    Redox& rdx_;
+    redox::Redox& rdx_;
 
   private:
     
@@ -82,9 +89,17 @@ namespace drift {
 
   public:
 
-    external_part ( const bool now = false );
-    external_part ( const Json::Value& storage_meta );
-    external_part ( const boost::uuids::uuid&, bool now = false );
+    external_part ( drift::PartGraph& pg,
+		    redox::Redox& rdx,
+		    const bool now = false );
+    external_part ( drift::PartGraph& pg,
+		    redox::Redox& rdx,
+		    const Json::Value& storage_meta,
+		    bool now = false );
+    external_part ( const boost::uuids::uuid&,
+		    drift::PartGraph& pg,
+		    redox::Redox& rdx,
+		    bool now = false );
     virtual ~external_part();
 
     virtual void load();
@@ -110,8 +125,13 @@ namespace drift {
 
   public:
 
-    immediate_part ( const bool now = false );
-    immediate_part ( const boost::uuids::uuid&, bool now = false );
+    immediate_part ( drift::PartGraph& pg,
+		     redox::Redox& rdx,
+		     const bool now = false );
+    immediate_part ( const boost::uuids::uuid& tag,
+		     drift::PartGraph& pg,
+		     redox::Redox& rdx,
+		     const bool now = false );
     virtual ~immediate_part();
 
     virtual void load();
