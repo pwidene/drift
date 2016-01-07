@@ -1,13 +1,11 @@
-
-using namespace std;
-
 #include <algorithm>
-
 
 #include "json/json.h"
 
 #include "internal.h"
 #include "part.h"
+
+using namespace std;
 
 extern logging::sources::severity_logger<drift::severity_level> lg;
 
@@ -16,234 +14,209 @@ namespace drift {
   part::~part()
   {}
 
-  part::part ( const bool now ) :
-    dirty_( New )
+  part::part ( drift::PartGraph& pg,
+	       redox::Redox& rdx,
+	       const bool now ) :
+    pgraph_( pg ),
+    rdx_( rdx )
   {
+    dirty_ = New;
   }
 
 
-  part::part (const boost::uuids::uuid& tag, const bool now) :
-    tag_ (tag), dirty_( New )
+  part::part ( const boost::uuids::uuid& tag,
+	       drift::PartGraph& pg,
+	       redox::Redox& rdx,
+	       const bool now) :
+    pgraph_( pg ),
+    rdx_( rdx ),
+    tag_ (tag)
+  {
+    dirty_ = New;
+  }
+
+  void
+  part::json_props ( Json::Value& props )
+  {
+    props["tag"] = boost::uuids::to_string( tag_ );
+    props["name"] = name_;
+  }
+
+
+  void
+  part::remove()
+  {
+    try {
+      rdx_.command<string>( {"DEL", boost::uuids::to_string( tag_ ) + ":immediate" },
+			    [](redox::Command<string>& c) {
+			      if (!c.ok()) throw &c;
+			    });
+
+    }
+    catch (redox::Command<string>* cex) {
+      // again right now do nothing
+    }
+  }
+
+
+
+  void 
+  part::adopt ( part& child )
+  {
+    /*
+     *  Add the edge to the part graph
+     */
+    auto edpair = add_edge ( v_, child.v_, pgraph_ );
+    auto now = boost::chrono::system_clock::now();
+    if ( edpair.second ) {
+      // new edge addition, store any edge properties
+      ;
+    
+    }
+
+    // Force a store on one or both parts?
+  
+  }
+
+
+  void
+  part::abandon()
+  {
+
+  }
+
+  void
+  part::abandon ( part& child )
+  {
+    /*
+     *  To be clear, here, what we're doing is severing the relationship between 
+     *    me and this particular child part.  Neither a shallow nor deep deletion.
+     */
+  }
+
+
+  immediate_part::immediate_part( drift::PartGraph& pg,
+				  redox::Redox& rdx,
+				  const bool now )
+    : part( pg, rdx, now )
   {
     if (now) {
       this->store();
     }  
   }
 
-void
-part::json_props ( Json::Value& props )
-{
-  props["tag"] = tag_.to_string();
-  props["name"] = name_;
-}
-
-
-void
-part::store()
-{
+  immediate_part::immediate_part( const boost::uuids::uuid& tag,
+				  drift::PartGraph& pg,
+				  redox::Redox& rdx,
+				  const bool now )
+    : part( tag, pg, rdx, now )
+  {
+    if (now) {
+      this->store();
+    }  
+  }
   
-  /*
-   *  build a redis key prefixed by the UUID '<uuid>:immediate' to index the stored value
-   *  issue the appropriate redis command
-   *
-   *  any properties or metadata get stored at '<uuid>:properties' and '<uuid>:metadata' 
-   *  adopt/abandon methods manage the child parts
-   *
-   *  redis should handle any key existence issues for us
-   */
-
-  if (dirty_[Immediate]) {
+  void
+  immediate_part::store()
+  {
+  
     /*
-     * do the redox async store
+     *  build a redis key prefixed by the UUID '<uuid>:immediate' to index the stored value
+     *  issue the appropriate redis command
+     *
+     *  any properties or metadata get stored at '<uuid>:properties' and '<uuid>:metadata' 
+     *  adopt/abandon methods manage the child parts
+     *
+     *  redis should handle any key existence issues for us
      */
-    rdx_.command<string>
+ 
+    try {
+      rdx_.command<string>( {"SET", boost::uuids::to_string( tag_ ) + ':' + "immediate", immediate_.asString() },
+			    [](redox::Command<string>& c) {
+			      if (!c.ok()) throw &c;
+			    });
 
-  //  An empty node_uri means we haven't been stored yet
-  bool creating;
-  if (node_uri_.empty()) {
-    creating = true;
-    req.set_method ( web::http::methods::POST );
-  } else {
-    creating = false;
-    req.set_method ( web::http::methods::PUT );
-  }
-
-  req.headers().add ( "Accept", "application/json" );
-  req.headers().add ( "Content-Type", "application/json" );
-
-  web::json::value props;
-  json_props ( props );
-    
-  req.set_body ( props );
-
-  pplx::task<void> ptask = 
-    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() == web::http::status_codes::Created and creating) {
-
-	  // get the URI from the REST response and save it
-	  web::http::http_headers::iterator i = response.find("Location");
-	  if (i != response.end()) {
-	    node_uri_ = i->second;
-	  }
-
-	  ctime_ = mtime_ = boost::chrono::system_clock::now();
-
-	} else if ( response.status_code() == web::http::status_codes::NoContent and not creating ) {
-	  
-	  // this was a triumph, I'm making a note here, HUGE SUCCESS
-	  mtime_ = boost::chrono::system_clock::now();
-
-	} else {
-	  
-	  // We're in uncharted territory, pull the ripcord
-	  throw response;
-	}
-      });
-}
-
-
-
-void
-part::load()
-{
-  std::ostringstream ostr;
-  ostr << part::get_n4j_rest_uri() << node_id_;
-  web::http::client::http_client cli ( ostr.str() );
-  web::http::http_request req ( web::http::methods::GET );
-  
-  req.headers().add ( "Accept", "application/json" );
-  
-  pplx::task<void> ptask = 
-  client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-      if ( response.status_code() == web::http::status_codes::OK ) {
-	  return response.extract_json();
-	}
-	return pplx::task_from_result(json::value());
-    });
-    /*
-      .then([](pplx::task<json::value> previousTask) {
-	  try {
-	    const json::value& v = previousTask.get();
-	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
-	      const json::value &str = iter->first;
-	      const json::value &val = iter->second;
-	      std::cout << "key: " << str.as_string() << ", value = " << val.to_string() << std::endl;
-	    }
-	  }
-	  catch (const http_exception& e) {
-	    std::ostringstream ss;
-	    ss << e.what() << endl;
-	    std::cout << ss.str();
-	  }
-	}
-	);
-    */
-}
-
-
-void
-part::remove()
-{
-  std::ostringstream ostr;
-  ostr << part::get_n4j_rest_uri() << "node/" << node_id_;
-  web::http::client::http_client cli ( ostr.str() );
-  web::http::http_request req ( web::http::methods::DELETE );
-
-  req.headers().add ( "Accept", "application/json" );
-
-  pplx::task<void> ptask = 
-    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() == web::http::status_codes::Conflict ) {
-	  throw response;
-	}
-	if ( response.status_code() == web::http::status_codes::NoContent ) {
-	  return response.extract_json();
-	}
-	return pplx::task_from_result(json::value());
-      });
-
-  /*
-    .then([](pplx::task<json::value> previousTask) {
-	  try {
-	    const json::value& v = previousTask.get();
-	    for (auto iter = v.cbegin(); iter != v.cend(); ++iter) {
-	      const json::value &str = iter->first;
-	      const json::value &val = iter->second;
-	      std::cout << "key: " << str.as_string() << ", value = " << val.to_string() << std::endl;
-	    }
-	  }
-	  catch (const http_exception& e) {
-	    std::ostringstream ss;
-	    ss << e.what() << endl;
-	    std::cout << ss.str();
-	  }
-	}
-	);
-  */
-}
-
-
-
-void 
-part::adopt ( part& child )
-{
-  /*
-   *  Add the edge to the part graph
-   */
-  auto edpair = add_edge ( v_, child.v_, pgraph_ );
-  auto now = boost::chrono::system_clock::now();
-  if ( edpair.second ) {
-    // new edge addition, store any edge properties
-    ;
-    
-  }
-
-  // Force a store on one or both parts?
-  
-}
-
-
-void
-part::abandon()
-{
-  std::for_each ( parts_.begin(), parts_.end(), 
-		  [](std::pair<std::string, part*> p) {
-		      
-		    web::http::client::http_client cli (p->second);
-		    web::http::http_request req ( web::http::methods::DELETE );
-		    req.headers().add ( "Accept", "application/json" );
-
-		    pplx::task<void> ptask = 
-		      client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-			  if ( response.status_code() != web::http::status_codes::NoContent) {
-			    throw response;
-			  }
-			  return pplx::task_from_result(json::value());
-			});
-		  })
-}
-
-void
-part::abandon ( part& child )
-{
-  /* 
-   *  To be clear, here, what we're doing is severing the relationship between 
-   *    me and this particular child part.  Neither a shallow nor deep deletion.
-   */
-
-  web::http::client::http_client cli ( parts_[&child] ); 
-  web::http::http_request req ( web::http::methods::DELETE );
-  req.headers().add ( "Accept", "application/json" );
-
-  pplx::task<void> ptask = 
-    client.request(req).then([](web::http::http_response response) -> pplx::task<json::value> {
-	if ( response.status_code() != web::http::status_codes::NoContent) {
-	  throw response;
-	}
-	return pplx::task_from_result(json::value());
-      });
-}
+      mtime_ = boost::chrono::system_clock::now();
+      std::ostringstream ostr;
+      ostr << mtime_;
+      rdx_.command<string>( { "SET", boost::uuids::to_string( tag_ ) + ':' + "mtime", ostr.str() },
+			    [](redox::Command<string>& c) {
+			      if (!c.ok()) throw &c;
+			    });
       
+    }
+    catch (redox::Command<string>* cex) {
+      // right now do nothing
+    }
+
+  }
+
+
+
+
+  void
+  immediate_part::load()
+  {
+    try {
+      rdx_.command<string>( {"GET", boost::uuids::to_string( tag_ ) + ':' + "immediate" },
+ 			    [](redox::Command<string>& c) {
+			      if (!c.ok()) throw &c;
+			    });
+      dirty_[Immediate] = 0;
+    
+      // assign c.reply() to the immediate_ member
+      // throw should protect us against errors
+      // what to do about state mask?
+
+    }
+    catch (redox::Command<string>* cex) {
+      // again right now do nothing
+    }
+  }
+
+
+
+  external_part::external_part( drift::PartGraph& pg,
+				redox::Redox& rdx,
+				const bool now )
+    : part( pg, rdx, now )
+  {
+    if (now) {
+      this->store();
+    }  
+  }
+
+  external_part::external_part( drift::PartGraph& pg,
+				redox::Redox& rdx,
+				const Json::Value& storage_meta,
+				const bool now )
+    : part( pg, rdx, now )
+  {
+    if (now) {
+      this->store();
+    }  
+  }
+
+  external_part::external_part( const boost::uuids::uuid& tag,
+				drift::PartGraph& pg,
+				redox::Redox& rdx,
+				const bool now )
+    : part( tag, pg, rdx, now )
+  {
+    if (now) {
+      this->store();
+    }  
+}
+
+  void
+  external_part::load()
+  {}
+
+  void
+  external_part::store()
+  {}
+  
+}
 
 
 

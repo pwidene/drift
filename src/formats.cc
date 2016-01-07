@@ -24,7 +24,7 @@ FMField drift::advert_fields[] =
     {"meta", "heartbeat", sizeof(drift::heartbeat), FMOffset(drift::advert_ptr, meta)},
     {"service_endpoint", "string", sizeof(char*), FMOffset(drift::advert_ptr, service_endpoint)},
     {"endpoint_stone", "integer", sizeof(int), FMOffset(drift::advert_ptr, endpoint_stone)},
-    FMFields_terminator
+    FMfields_terminator
   };
 
 FMStructDescRec drift::advert_formats[] =

@@ -47,33 +47,38 @@ include(CheckStructHasMember)
 include(CreateLibtoolFile)
 include(FindCERCSProject)
 
-add_definitions(-DBOOST_ALL_DYN_LINK)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-register -Wno-writable-strings")
+
+add_definitions(-DBOOST_LOG_DYN_LINK -DBOOST_LOG_WITHOUT_WCHAR_T)
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} )
 
-find_package( Boost COMPONENTS thread program_options system log log_setup chrono )
+find_package( Boost COMPONENTS log_setup log thread program_options system chrono )
 
 if( NOT REDOX_PREFIX )
   MESSAGE( FATAL_ERROR "REDOX_PREFIX not set!! Redox is required in order to build Drift. Stopping.")
 endif()
 
-if( NOT LIBJSON_PREFIX and NOT OTHER_PREFIX)
+if( NOT LIBJSON_PREFIX AND NOT OTHER_PREFIX)
   MESSAGE( FATAL_ERROR "LIBJSON_PREFIX not set. LibJSON is required in order to build Drift. Stopping.")
 endif()
 
-if( OTHER_PREFIX )
+if( NOT OTHER_PREFIX )
   set (OTHER_PREFIX /usr/local)
 endif()
 
 FOREACH(XPATH REDOX LIBJSON OTHER)
   set (${XPATH}_INCLUDES ${${XPATH}_PREFIX}/include)
-  include_directories( ${XPATH}_INCLUDES )
-  set (${XPATH}_LIBPATH ${${XPATH}_PREFIX/lib)
-  link_directories( ${XPATH}_LIBPATH )
+  include_directories( ${${XPATH}_INCLUDES} )
+  set (${XPATH}_LIBPATH ${${XPATH}_PREFIX}/lib)
+  link_directories( ${${XPATH}_LIBPATH} )
 endforeach()
 
 include_directories(${Boost_INCLUDE_DIR} ${CERCS_PREFIX}/include )
 link_directories( ${CERCS_PREFIX}/lib )
 set (CERCS_LIB_LIST evpath ffs dill atl cercs_env)
+
+set (LIBJSON_LIBRARIES jsoncpp)
+set (REDOX_LIBRARIES ev hiredis redox)
 
 add_subdirectory( src )
 add_subdirectory( doc )

@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include "boost/shared_ptr.hpp"
 #include "boost/make_shared.hpp"
@@ -13,8 +14,6 @@
 #include "boost/log/utility/string_literal.hpp"
 #include "boost/chrono/system_clocks.hpp"
 #include "boost/scoped_ptr.hpp"
-
-//#include "mongo/client/dbclient.h"
 
 #include "service.h"
 
@@ -33,13 +32,14 @@ usage(char* prog)
 }
 
 
+drift::service *instance;
 
 int 
 main (int argc , char *argv[]) 
 {
   struct sigaction new_action, old_action;
   int bootstrap_node = 0;
-
+  drift::service_params sp;
 
   /*
    *  Start logging services
@@ -55,10 +55,9 @@ main (int argc , char *argv[])
    *  Get the command-line and/or config file options
    */
   driftd_opts.add_options()
-    ("init-network,n", po::value<bool>()->default_value(true), "Initialize network")
-    ("bootstrap,b", po::value<bool>()->default_value(true), "Bootstrap network")
-    ("contact-string,c", po::value<string>(), "Network contact string")
-    ("help,h", po::value<bool>()->default_value(false), "Display options help")
+    ("help,h", "Display options help")
+    ("redis-host,r", po::value<string>(&sp.redis_host)->default_value("localhost"), "Redis server hostname")
+    ("redis-port", po::value<unsigned short>(&sp.redis_port)->default_value(6379), "Redis server port")
     ;
   po::variables_map opts_vm;
   try {
@@ -74,8 +73,10 @@ main (int argc , char *argv[])
 
   po::notify( opts_vm );
     
+  instance = new drift::service( sp );
+  
   /* Catch SIGINT, SIGTERM */  
-  new_action.sa_handler = drift::service::close_handler;
+  new_action.sa_handler = [](int signo) { instance->close_handler( signo ); };
   sigemptyset(&new_action.sa_mask);
   
   sigaction(SIGINT,NULL,&old_action);
@@ -85,9 +86,9 @@ main (int argc , char *argv[])
   sigaction(SIGTERM,NULL,&old_action);
   if (old_action.sa_handler != SIG_IGN)
     sigaction(SIGTERM,&new_action,NULL);
-  
-  unique_ptr<drift::service> sp ( new drift::service );
-  sp->begin();
+
+  instance->begin();
 
   return 0;
 }
+

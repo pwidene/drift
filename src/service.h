@@ -9,31 +9,39 @@
 #include "boost/graph/adjacency_list.hpp"
 #include "boost/tuple/tuple.hpp"
 
+#include "redox.hpp"
+
 #include "atl.h"
 #include "evpath.h"
 
 #include "internal.h"
-#include "control.h"
-#include "action.h"
+#include "pgraph.h"
+
 #include "trie.h"
-#include "part.h"
 
 using namespace std;
 
 namespace drift {
 
-  struct {
-    string json;
-    string attrs;
-  } drift_props;
+  class part;
+  class control;
+
+  struct service_params {
+    string redis_host;
+    unsigned short redis_port;
+  };
   
+
+  /*!
+   The Drift service class. Represents a single service instance.
+  */
   class service {
 
   public:
-    service();
+    service( service_params& );
     virtual ~service();
 
-    static void close_handler ( int sig );
+    void close_handler ( int sig );
     
     CManager cm() const { return cm_; };
     void begin();
@@ -42,16 +50,32 @@ namespace drift {
 
     unique_ptr<control> c_;
 
-    typedef boost::adjacency_list < listS, listS, directedS, drift_props, drift_props > PartGraph;
+
     PartGraph pgraph_;
 
+    /*
+     *  actions interface
+     */
+    void put_immediate( long int, string&, attr_list );
+    void put_immediate( double, string&, attr_list );
+    void put_immediate( string&, string&, attr_list );
+
+    void get_immediate( long int &, string &, attr_list );
+    void get_immediate( double&, string&, attr_list );
+    void get_immediate( string&, string&, attr_list );
+
+    
   protected:
     
     CManager cm_;
     static int terminate_condition_;
     char *service_endpoint_;
     Trie<part*> master_index_;
-  
+
+    redox::Redox rdx_;
+
+    service_params sp_;
+    
   private:
     static service *instance_;
     service& operator=(const service&);

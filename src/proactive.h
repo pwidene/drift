@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "json.h"
+#include "json/json.h"
 
 extern "C" {
 #include "evpath.h"
@@ -35,11 +35,16 @@ namespace drift {
   protected:
 
     proactive ( FMStructDescRec format_list[] );
+    proactive();
     virtual ~proactive();
 
     FMStructDescRec *format_list_;
     static CManager server_cm_;
 
+  private:
+    proactive& operator=( const proactive& );
+    proactive( const proactive& );
+    
   };
 
 };

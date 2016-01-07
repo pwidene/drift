@@ -6,16 +6,21 @@
 #include <unordered_map>
 #include <bitset>
 
+#include "json/json.h"
+#include "redox.hpp"
+
 #include "boost/uuid/uuid.hpp"
 #include "boost/uuid/uuid_generators.hpp"
+#include "boost/uuid/uuid_io.hpp"
 #include "boost/chrono.hpp"
-#include "boost/adjacency_list.hpp"
 #include "boost/tuple/tuple.hpp"
 
 
-#include "json/json.h"
 
 #include "internal.h"
+#include "pgraph.h"
+
+#include "proactive.h"
 
 namespace drift {
 
@@ -23,15 +28,22 @@ namespace drift {
 
   public:
 
-    part ( const bool now = false );
-    part ( const boost::uuids::uuid&, bool now = false );
+    part ( drift::PartGraph&,
+	   redox::Redox&,
+	   const bool now = false );
+    part ( const boost::uuids::uuid&,
+	   drift::PartGraph&,
+	   redox::Redox&,
+	   bool now = false );
     virtual ~part();
 
-    virtual void load();
-    virtual void store();
     virtual void adopt( part& );
     virtual void abandon ( part& );
     virtual void abandon();
+    virtual void remove();
+
+    virtual void load() = 0;
+    virtual void store() = 0;
 
   public:
 
@@ -42,7 +54,7 @@ namespace drift {
     boost::uuids::uuid tag_;
     
     // Pointer to my vertex in the service's part graph
-    boost::vertex_descriptor v_;
+    drift::PartGraph::vertex_descriptor v_;
 
     // Creation and modification times
     boost::chrono::system_clock::time_point ctime_, mtime_;
@@ -63,7 +75,7 @@ namespace drift {
 
     // Reference to the Redox server owned by the service instance who
     // created me
-    Redox& rdx_;
+    redox::Redox& rdx_;
 
   private:
     
@@ -77,21 +89,25 @@ namespace drift {
 
   public:
 
-    external_part ( const bool now = false );
-    external_part ( const Json::Value& storage_meta );
-    external_part ( const boost::uuids::uuid&, bool now = false );
-    virtual ~external_part();
+    external_part ( drift::PartGraph& pg,
+		    redox::Redox& rdx,
+		    const bool now = false );
+    external_part ( drift::PartGraph& pg,
+		    redox::Redox& rdx,
+		    const Json::Value& storage_meta,
+		    bool now = false );
+    external_part ( const boost::uuids::uuid&,
+		    drift::PartGraph& pg,
+		    redox::Redox& rdx,
+		    bool now = false );
+    virtual ~external_part() = default;
 
     virtual void load();
     virtual void store();
 
   public:
 
-    Json::value storage_meta_;
-
-  protected:
-
-    virtual void json_props ( Json::Value& );
+    Json::Value storage_meta_;
 
   private:
 
@@ -100,29 +116,30 @@ namespace drift {
 
   };
 
+  
   class immediate_part : public part {
 
   public:
 
-    immediate_part ( const bool now = false );
-    immediate_part ( const boost::uuids::uuid&, bool now = false );
-    virtual ~immediate_part();
+    immediate_part ( drift::PartGraph& pg,
+		     redox::Redox& rdx,
+		     const bool now = false );
+    immediate_part ( const boost::uuids::uuid& tag,
+		     drift::PartGraph& pg,
+		     redox::Redox& rdx,
+		     const bool now = false );
+    virtual ~immediate_part() = default;
 
     virtual void load();
     virtual void store();
 
-    part& operator= ( unsigned long u ) { immediate_["unsigned-long"] = web::json::value::parse ( std::to_string ( u ) ); }
-    part& operator= ( long l ) { immediate_["long"] = web::json::value::parse ( std::to_string ( l ) ); }
-    part& operator= ( std::string& s ) { immediate_["string"] = web::json::value::parse ( s ); };
-    part& operator= ( double d ) { immediate_["double"] = web::json::value::parse ( std::to_string ( d ) ); };
-
+    template<typename X>
+    part&
+    operator= (const X& x) { immediate_ = x ; }
+    
   public:
 
     Json::Value immediate_;
-
-  protected:
-
-    virtual void json_props ( Json::Value& );
 
   private:
 
