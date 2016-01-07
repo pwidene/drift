@@ -13,7 +13,6 @@
 #include "boost/uuid/uuid_generators.hpp"
 #include "boost/uuid/uuid_io.hpp"
 #include "boost/chrono.hpp"
-#include "boost/graph/adjacency_list.hpp"
 #include "boost/tuple/tuple.hpp"
 
 
@@ -38,12 +37,13 @@ namespace drift {
 	   bool now = false );
     virtual ~part();
 
-    virtual void load() = 0;
-    virtual void store() = 0;
     virtual void adopt( part& );
     virtual void abandon ( part& );
     virtual void abandon();
     virtual void remove();
+
+    virtual void load() = 0;
+    virtual void store() = 0;
 
   public:
 
@@ -100,7 +100,7 @@ namespace drift {
 		    drift::PartGraph& pg,
 		    redox::Redox& rdx,
 		    bool now = false );
-    virtual ~external_part();
+    virtual ~external_part() = default;
 
     virtual void load();
     virtual void store();
@@ -108,10 +108,6 @@ namespace drift {
   public:
 
     Json::Value storage_meta_;
-
-  protected:
-
-    virtual void json_props ( Json::Value& );
 
   private:
 
@@ -132,7 +128,7 @@ namespace drift {
 		     drift::PartGraph& pg,
 		     redox::Redox& rdx,
 		     const bool now = false );
-    virtual ~immediate_part();
+    virtual ~immediate_part() = default;
 
     virtual void load();
     virtual void store();
@@ -144,10 +140,6 @@ namespace drift {
   public:
 
     Json::Value immediate_;
-
-  protected:
-
-    virtual void json_props ( Json::Value& );
 
   private:
 

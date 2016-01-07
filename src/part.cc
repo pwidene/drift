@@ -43,8 +43,6 @@ namespace drift {
   }
 
 
- 
-
   void
   part::remove()
   {

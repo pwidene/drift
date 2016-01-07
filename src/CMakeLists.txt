@@ -15,7 +15,7 @@ set (LIBDRIFTF_SRC_LIST formats.cc)
 add_library(driftf SHARED ${LIBDRIFTF_SRC_LIST})
 
 add_executable(driftd driftd.cc control.cc service.cc proactive.cc part.cc)
-target_link_libraries(driftd driftf ${CERCS_LIB_LIST} ${CASABLANCA_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(driftd driftf ${CERCS_LIB_LIST} ${LIBJSON_LIBRARIES} ${REDOX_LIBRARIES} ${Boost_LIBRARIES})
 set_target_properties( driftd PROPERTIES RPATH_MACOSX TRUE )
 install(TARGETS driftd
   RUNTIME DESTINATION bin
