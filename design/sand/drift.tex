@@ -1,0 +1,551 @@
+\newcommand{\driftd}{\texttt{driftd}\xspace}
+\newcommand{\libdrift}{\texttt{libdrift}\xspace}
+\newcommand{\dpart}{\texttt{Part}\xspace}
+\newcommand{\dparts}{\texttt{Part}s\xspace}
+
+\section{The Drift Service}
+
+\emph{Drift} is a client/server implementation, based on publish/subscribe middleware, of the data fusion
+service design described in the previous section.  The following components of Drift are of interest and
+will be discussed in more detail in this chapter.
+
+\begin{itemize}
+\item A persistent daemon \texttt{driftd} that runs as an independent process on a POSIX-flavored system;
+\item A client library, \libdrift, of C++ objects that are used to interact with \driftd;
+\item An instance of the Neo4J graph database, used by \driftd for relationship management;
+\item An (optional) instance of the MongoDB schemaless data store, used by \driftd for arbitrary data
+  storage;
+\item An (optional) instance of the Mule Enterprise Service Bus, whose integration with Drift is
+  described in Chapter~\ref{sec:ephemeris}.
+\end{itemize}
+
+\section{\driftd}
+
+\driftd is a persistent, independent process which receives messages from clients and sends response
+messages to those clients.  \driftd also periodically sends advertisement messages with certain
+information about the current state of the service as well as update messages when information items
+managed by the service undergo state changes.  These advertisement and proactive messages go out to any
+interested (\emph{subscribed}) party.  
+
+\driftd encapsulates several capabilities and/or subsystems of note which will be described in this
+chapter. All communication is accomplished in a \emph{publish/subscribe messaging} style and is enabled by a
+third-party messaging subsystem.  This subsystem also provides the infrastructure for defining message
+types and is responsible for data marshaling between client and server.  \emph{Flexible analytic
+  indexing} provides novel ways for clients to refer to data items.  The \emph{raison d'\^{e}tre} of
+Drift is its implementation of \emph{data fusion}, which is accomplished via a composite data structure
+termed the \emph{parts list}.  Finally, we discuss the \emph{proactivity} features of Drift and how they
+make interacting with the service more natural.
+
+\subsection{Publish/subscribe messaging}
+
+Drift is based in part on ideas realized in a research artifact known as the \emph{Proactive Directory
+  Service}\cite{bustamante02:_scalab_direc_servic_using_proac}.  This service was used as a key
+infrastructure component for several years, but over time several shortcomings were identified.  In
+particular, PDS required clients to establish a session-based conversation with a server using a set of
+remote procedure calls (RPCs). Clients that were only interested in updates about data items or otherwise
+had limited or bursty interactions with the server were forced to maintain this session for the duration
+of their interaction.  Part of the design rationale for PDS was to provide a more lightweight,
+scalable means of information awareness among cooperating processes.  Even though this situation only
+affected a certain subset of applications using PDS, this was enough to justify revisiting the design.
+
+Interactions with \driftd are explicitly message-based, as opposed to RPC-based, and there is no notion
+of a persistent session with a particular instance of \driftd. A publish/subscribe (pub/sub) model is implemented,
+and while \driftd is a central point of published messages, there is in principle nothing preventing
+multiple \driftd services from operating cooperatively in a peer-to-peer arrangement.  The implementation
+described here assumes a single \driftd instance.
+
+There are many implementations of pub/sub middleware available as open-source software, each with
+relative advantages and disadvantages.  We now describe the EVpath middleware that was chosen for the
+implementation of Drift.
+
+\subsubsection{EVpath middleware}
+
+EVpath\cite{eisenhauer09:_event} is an event transport middleware layer that can be used to form
+arbitrary dataflow graphs among cooperating processes.  EVpath is built around the concept of
+\emph{stones} (as in ``stepping stones'') which can be linked together to form a path.  Stones in EVpath
+are lightweight entities that roughly correspond to processing points in dataflow diagrams.  Stones of
+different types perform data filtering, data transformation, mux and demux of data as well as
+transmission of data between processes over network links.  
+
+\begin{figure}
+  \center{
+    \includegraphics[width=5in]{figs/overlay.jpg}
+    \caption{An example dataflow network that can be implemented using EVpath.}
+  }
+  \label{fig:evpath-overlay}
+\end{figure}
+
+Figure~\ref{fig:evpath-overlay} shows an example dataflow network that one might use EVpath to
+implement.  Connected stones distribute data from the source through the network to the sinks.  It's
+unreasonable to assume that all sinks are interested in the same data, and in fact each sink might want
+to customize the event stream in its own particular way (with sink $i$ customizing its stream with a
+function $F_i$).  An efficient implementation of event delivery would place these \emph{filter} functions
+as close to the source as possible to avoid transmitting unwanted data that would only be discarded on
+arrival at its destination (Figure~\ref{fig:evpath-func1}).
+
+\begin{figure}
+    \center{
+      \includegraphics[width=5in]{figs/func1.jpg}
+      \caption{A customized dataflow network that can be implemented with EVpath.}
+    }
+    \label{fig:evpath-func1}
+\end{figure}
+
+Drift uses EVpath to establish just such dataflow graphs between \driftd and its clients.  Furthermore,
+Drift allows clients using \libdrift to customize their event streams (this is described more fully in
+Section~\ref{sec:proactivity}. 
+
+\subsubsection{Constructing messages}
+
+Part of EVpath's management of the dataflow graph is the marshaling and unmarshaling of data as it is
+passed to and from the network.  EVpath relies on a companion library, FFS~\cite{eisenhauer11:FFS}, to
+accomplish the message definition and description required for this data management.  Drift, in turn,
+uses FFS facilities to define the different messages that are exchanged between \driftd and its clients.
+
+\begin{figure}
+\begin{lstlisting}
+typedef struct _simple_part_xfer {
+    unsigned long flags;
+    struct _simple_part part;
+    char* index_name;
+    char* index_spec;
+  } simple_part_xfer, *simple_part_xfer_ptr;
+
+
+FMField drift::simple_part_xfer_fields[] =
+    {
+      {"flags", "integer", sizeof(unsigned long), FMOffset(drift::simple_part_xfer_ptr, flags)},
+      {"part", "simple_part", sizeof(drift::simple_part), FMOffset(drift::simple_part_xfer_ptr, part)},
+      {"index_name", "string", sizeof(char*), FMOffset(drift::simple_part_xfer_ptr, index_name)},
+      {"index_spec", "string", sizeof(char*), FMOffset(drift::simple_part_xfer_ptr, index_spec)},
+      FMfields_terminator
+    };
+\end{lstlisting}
+\label{fig:field-list}
+\end{figure}
+
+Figure~\ref{fig:field-list} shows how a sample Drift message is defined using FFS for use with EVpath.
+The message structures are defined in conventional C-language style for use in the code of clients and
+\driftd, but extra information has to be supplied in order for those structures to be marshaled to and
+from the network.  An exhaustive description of all the message definition options possible in FFS is
+beyond the scope of this document, but examining this structure in slightly more detail is instructive:
+
+Each field of the C structure is represented in a metadata structure used by FFS.  Each field is tagged
+with the following:
+\begin{itemize}
+\item A type specifier (e.g. ``integer'' for \texttt{flags}).  This specifier indicates what kind of
+  marshaling is required for the field, which can enable certain optimizations.  This corresponds loosely
+  to C-style typing but size and signed-ness is not reflected here.
+\item The size of the field in bytes.
+\item The offset of the field from the beginning of the structure.
+\end{itemize}
+
+New messages are added to the set that \driftd understands by defining them in this fashion.  While
+recompilation is necessary to incorporate new messages defined using this method, there are also some
+limited EVpath facilities for defining message types dynamically and using introspection-based
+marshaling.  
+
+
+\subsubsection{Processing messages in \driftd}
+
+All defined messages are registered by \driftd with EVpath and given an associated handler function.
+These handler functions are called asynchronously when messages arrive.  Each handler has access to the
+main Drift service object in \driftd, and uses this object reference to invoke methods on the service
+object.  The body of \driftd is simply an event loop, waiting on messages to arrive and their handler
+functions to use the service object.  Appropriate thread exclusion measures are used by \driftd to ensure
+the integrity of its internal data.
+
+\newcommand{\partclass}{\texttt{drift::part}}
+
+\subsection{Data Fusion, Relationship Management, and the Parts List}
+
+
+Drift's data fusion functionality revolves around the \dpart concept.  Fundamentally, a
+\dpart encapsulates the following:
+\begin{itemize}
+\item A datum, along with any metadata necessary to store or retrieve that datum;
+\item A UUID that can be associated with index entries in any index maintained by a \driftd instance;
+\item A list of ``child'' \dparts
+\end{itemize}
+In this section we describe how \dparts are used by \driftd to store and retrieve data, the different
+types of data storage used by \driftd, and how relationships between fused \dparts are maintained.
+
+\subsubsection{How \dparts operate}
+
+The \dpart concept is realized in a class, \partclass.  This class encapsulates the information
+described above.  Each time \driftd receives a request to associate a datum with an index entry, it
+generates an UUID (using the \texttt{boost::uuid} library).  These UUIDs are formed in part using the
+network address of the service and so are designed to be globally unique across multiple \driftd
+instances.  The UUID is then added as the stored value, using the given indexing information in the
+request, to the specified index structure.  It is important to note that \dparts know nothing about the
+various index structures maintained by \driftd \textemdash they cannot retrieve the index key of any
+entries they may be associated with.
+
+Drift allows more than one index to maintain an entry associated with a particular UUID.  This allows
+very flexible treatment of data items.  For instance, enumerating a complete set of data items using a
+name-based index is straightforward, and it might be useful to simultaneously be able to perform
+nearest-neighbor searches on members of that set (based on information maintained in another index
+structure).  
+
+\subsubsection{Data storage}
+
+Once a UUID is associated with a \partclass instance, the metadata for the indicated datum is handled.
+\driftd distinguishes between two types of storage for data, \emph{immediate} and \emph{external}.  This
+reflects a need to compromise between efficiency and flexibility.  Many uses of Drift will involve simple
+or primitive data items \textemdash character strings and real or integral numbers.  Rather than generate
+metadata and store these primitive items in MongoDB, \driftd denotes the \dpart holding that data as
+\emph{immediate} and loads/stores the data along with the \dpart metadata.  In practice, this means that
+immediate data items are kept in the memory of the \driftd process, and accessing them does not typically
+require a request to an external database.  While there are caching issues associated with this type of
+behavior, addressing them is not a priority for Drift.  
+
+An \emph{external} data item has associated with it sufficient metadata to store and retrieve it from
+some backing store external to the \driftd process.  \driftd makes use of its companion MongoDB database
+for some external items, and for these the metadata consists of the database, collection, and column name
+sets required to uniquely identify data within a MongoDB service.  Other external data can include items
+in relational databases, for which the metadata contains database connection information as well as a SQL
+query that will retrieve the data.  Another external type is files on a filesystem, for which the
+metadata is a Universal Resource Locator (URL) that can be used to retrieve the file from a remote
+location.  
+
+\partclass has methods for loading and storing data from the storage specified by the metadata.  There is
+currently a size threshold beyond which a \dpart's data will not be held by \driftd in memory, and any
+requests for it will be satisfied by forwarding the current metadata to the requestor.  
+
+\subsubsection{Relationship management}
+
+A \dpart also contains the foundations for data fusion.  This is implemented in each \partclass by an
+associative set of \emph{child} \dpart references and UUIDs.  Constructing a fused data part is then done
+internally to \driftd by adding a set of child \dparts to this set.  The fused \dpart, being an instance
+of \partclass, is given a UUID and can be indexed just like any other.  From the user point of view,
+since \dparts are not typically referred to by UUID (although there is a message type that will send the
+UUID on \driftd's advertisement channel), a set of index entries representing different \dparts is
+supplied as part of a ``fuse'' request along with a proposed index entry to refer to the fused \dpart.
+
+\dpart metadata on the backing store indicates whether the \dpart is a fused part or not.  If so, the set
+of child \dpart UUIDs is retrieved and each \dpart's data is loaded in turn as though it were a simple
+\dpart.  While nothing in principle prevents this recursive design from extending to arbitrary levels of
+\dpart composition, the current \driftd implementation prohibits \dparts that are part of a composite
+from holding child \dparts themselves.
+
+In order to persist information about \dpart relationships, Drift uses the Neo4j~\footnote{Available at
+  \url{http://www.neo4j.org/}.} graph database. This information could have been stored using
+MongoDB or a low-overhead relational database like SQLlite.  The choice of using Neo4j as opposed to
+SQLlite came down to a design tradeoff.  SQLlite functions as an in-memory query-able data store
+with persistence ability, while Neo4j requires a connection to an external process.  It was decided that
+the more natural representation of a network of interrelated \dparts would be obtained by using Neo4j,
+which would not require the multiple joins of a relational database solution or the relatively
+complicated query expressions needed to store and retrieve that representation in a column-store like
+Mongo.  Additionally, this choice gives \driftd greater control over its own memory usage, allowing it to
+trade greater request latency for a smaller footprint; for an asynchronously-oriented service this seems
+a reasonable choice.
+
+A composite \dpart with 5 child \dparts in its part-list is persisted in Neo4j as a \dpart node with
+outgoing arcs to 5 other \dpart nodes.  The Neo4j API allows information about all such related nodes to
+be retrieved with a single call to the server, which is convenient for \driftd's purposes.
+Neo4j allows the association of data with relationship entities (conceptually, associating data with arcs
+in the relationship graph).  \dpart UUIDS, metadata, and immediate \dpart values are stored in these
+property lists.  For \dparts that are not immediate-data, or those whose immediate data values exceed the
+size threshold, the metadata for retrieving that data from MongoDB is stored instead (in MongoDB these
+data are stored as a column-set indexed by UUID).  
+
+\driftd communicates with the Neo4j server using a REST-style interface over HTTP.  There is no C/C++
+language level interface for Neo4j, and even in other development languages the language-level libraries
+are implemented on top of Neo4j's REST interface.  We use the open-source
+Casablanca REST SDK~\footnote{Available at \url{http://casablanca.codeplex.com/}.} to facilitate
+communication through the REST APIs of Neo4j and other services~\footnote{Incidentally, it is our use of
+  Casablanca which drives the requirement of a C++ compiler implementing the C++-11 standard in order to
+  build \driftd.}.  Load and store operations of \dparts are implemented by calling through the
+Casablanca library to Neo4j.  
+
+
+\subsection{Flexible Analytic Indexing}
+
+Flexible analytic indexing is central to the design of Drift.  \emph{Flexible} refers to the ability of
+\driftd to accommodate user-defined data structures into its architecture without requiring major code
+changes.  Two of the three existing indexes used by \driftd are \emph{analytic} ones, allowing arbitrary
+data to be tracked using selected features either from the data itself or selected by the user.  This
+section describes the three index structures used by \driftd and discusses possible future enhancements
+to the indexing arrangement.
+
+\subsubsection{Prefix trie}
+
+A hierarchical name space is a basic means of organizing information.  File systems, the Windows
+registry, and several directory service protocols have all provided such name spaces; they are
+well-understood and highly flexible.  The base data structure for these name spaces tends to be
+associative data structures with character strings for keys; very frequently some form of hash table is
+chosen.  
+
+
+\begin{figure}
+  \center{
+    \includegraphics[width=3in]{figs/alg_tries}
+    \caption{An example of a prefix tree.}
+  }
+  \label{fig:trie}
+\end{figure}
+
+Another associative structure that can be used for this, and the one that Drift uses, is a
+\emph{prefix trie} or \emph{trie}\cite{briandais59:_file}.  Tries have lookup-cost and storage advantages
+over hash tables, especially when the entire trie can fit in memory.  A \driftd instance contains a
+\texttt{Trie} class object that is used to implement a POSIX-style hierarchical mapping of '/'-delimited
+strings to UUIDs.  This is intended to be the default index structure for Drift, and should prove to be
+sufficient for many application needs.
+
+
+
+\subsubsection{R-tree and kd-tree}
+
+A large part of the utility of Drift comes from its ability to use analytic methods to map to
+\texttt{Parts}.  Indexes that deal with multidimensional data, in particular, are useful for ``big data''
+applications.  Two such indexes are the \emph{kd-tree}\cite{bentley80:_multid} and
+\emph{R-tree}\cite{gutman84:_r,beckmann90:_r}.  
+
+\begin{figure}
+  \center{
+    \includegraphics[width=5in]{figs/data-rects}
+    \caption{Visualization of data layout in an R-tree.}
+  }
+  \label{fig:r-tree}
+\end{figure}
+
+A kd-tree is useful for splitting a $k$-dimensional search
+space into hyperplanes, in the same way a binary tree partitions its key space into two halves at each
+node.  A kd-tree is a generalization of a binary tree for data with $k$ dimensions.  The kd-tree is
+useful for efficient range-based and nearest-neighbor searches of multidimensional data.  
+
+R-trees are used primarily for spatial indexing of multi-dimensional data.  Where a kd-tree would, by
+construction, split each dimension in the key space into halves at each node of the tree, an R-tree
+organizes its key space hierarchically, in that each node in the tree forms a ``bounding polygon'' that
+``contains'' the keys in the subtree beneath it.  R-trees are generally used to index geographical data
+and polygons for graphical systems, and Drift's usage of them is analogous.  To illustrate, consider
+using an R-tree to index machines in a data center using a vector of performance data from each machine
+as the key space.  An R-tree would then allow the identification of a set of machines contained in a
+range for each component of that vector (identifying the minimum bounding polygon where each point in the
+polygon is represented by a component of the vector).  This is a slightly different but related query and
+result than would be handled by a kd-tree.  For instance, a nearest-neighbor query of a kd-tree would
+return only the nearest $N$ neighbors, even if there were $2N$ neighbors in the given range; the R-tree
+would return all the neighbors in the ranges specified in the query.
+
+The current \driftd implementation uses an R-tree implementation provided by the Boost suite of C++
+libraries\cite{boost_c_librar_spatial_index}.  The kd-tree implementation is an open-source library\cite{krafft}.
+
+
+\subsubsection{Discussion}
+
+We recognize that the index structures included with Drift are unlikely to address all possible indexing
+needs.  This is a key design aspect of Drift realized in the \dpart concept.  Any associative container
+that can map some input to a \dpart will be sufficient for Drift, as long as a set of message definitions
+and handlers are added to allow \libdrift clients to use it.
+
+Drift was originally designed to accommodate index addition at runtime.  This design goal was eventually
+deferred in order to achieve a sort of ``minimum viable implementation'' which could be used as a basis
+for iteration and improvement.  However, future possible extensions to Drift may revisit this issue.
+
+Currently, adding an additional index to Drift requires modification of the project source and
+rebuilding.  More flexible options were considered as part of the design, each with tradeoffs between
+ease of programming, deployment, and performance.  The first is the use of a C++ shared object containing
+the new index structures and message definitions.  Installing a new index is triggered by a message from
+a client with a reference to the shared object, which is loaded using the\texttt{dlopen()} system call.
+This obviously requires shared objects for all possible desired indexes to be deployed along with
+\driftd.  
+
+The second solution relies on a C++-to-Python passthrough, where new index structures can be moved
+between address spaces running Python interpeters using that languages built-in code mobility
+facilities.  Access to the \dpart UUIDs maintained by \libdrift is accomplished through a specialized set
+of messages.  This approach, with at least one interposed layer of software, imposes additional
+performance penalties, although in Drift's intended usage regimes it's unclear that this would be a
+practical issue.
+
+Other more radical rearchitectures of Drift to solve this issue are possible, and were considered during
+the design stage.  One in particular would implement the entire indexing layer in Python, communicating
+with a separate UUID/\dpart management service.  
+
+Another interesting question for possible future evolution of Drift is which indexes might be useful to
+incorporate as first-class citizens, as it were, by bundling them in the source code.  Possibly of
+greatest interest here is the use of remote processing to point to a \dpart.  In this way, significantly
+more complex analysis on multi-dimensional data might be possible, at the cost of extra network traffic.
+Such architectures are common in enterprise systems, where output from multiple application logic tiers
+is combined in order to produce a logically-organized response to an end-user request.  
+
+
+\subsection{Proactivity}
+\label{sec:proactivity}
+
+\subsubsection{Rationale}
+
+We use the term \emph{proactivity} in the same manner as was used in prior
+research\cite{bustamante02:_scalab_direc_servic_using_proac}, to denote the use of an active interface
+between entities where updated information is transmitted to interested observers without their having to
+continually poll for it.  Such an interface presents advantages in system scalabilty, information
+freshness, and allows applications to be written in a more modular, decentralized style.  We note that
+proactivity is a well-established design technique, with instances found at architectural
+(``write-through'' caches), operating system (device interrupt handling), and software engineering (Java
+EE Beans, Microsoft DCOM).  
+
+Drift applies proactive interfaces to several of its internal information structures.  These updates take
+the form of EVpath messages, which are defined using the same FFS facilities as are used to define Drift
+system messages.  There is a well-known contact point (TCP/IP host/port or other unique
+network connection identifier) serviced by \driftd known as the \emph{advertisement channel}.  If a Drift
+client is interested in general \driftd updates, or knows that it will subscribe to data updates, that
+client subscribes to the advertisement channel before performing any other Drift operations, and is
+prepared to handle (i.e. has handler functions defined for) update events for the data in question.
+Subscribing to the advertisement channel before performing other operations ensures that no update
+messages about specific data are missed by the client.  
+
+Drift clients indicate when they request or store data in \driftd if they wish to receive updates for
+that data.  When \driftd sees this indication, it adds that data to the list of updates it pushes on the
+advertisement channel.  By default, separate update events for all proactive data are pushed to the
+single advertisement channel.  However, if a client wishes to split updates for a particular item off
+into a separate channel, it can indicate so to \driftd, which then replaces the data update payload in
+the advertisement channel event with contact information for the new channel.  Once the client sees this
+in the advertisement channel, it can retrieve that contact information and subscribe to the new channel.
+This technique is most useful if the data in question is frequently updated or if summarization of that
+data is useful.  In the next section, we illustrate how this is accomplished in Drift using EVpath
+facilities. 
+
+\subsubsection{Preserving client control of updates}
+
+The primary advantage to clients of pull-based interfaces is control.  Pull-based interfaces allow
+clients to manage when/if messages are sent and to anticipate replies (since the fact that a reply is
+impending and the type of information the reply carries are both known).  Proactivity allows clients to
+trade control for performance, as message traffic is only generated when updates occur.  As long as
+updates occur infrequently, this lack of control is not significant.  However, a client that registers
+interest in an object that begins changing with unanticipated frequency soon finds itself swamped with
+update messages. These update messages may not even be needed when they arrive, or may only be needed
+depending on other application-specific factors; proactivity in this case does more harm than good.
+
+At first glance, providing a filter at the client to discard unwanted or unneeded updates might seem
+enough.  Although this does allow the application to ignore updates, the update messages are still sent
+across the network, increasing the load on the server, the network, and the client.  Providing a single
+interface at the server to control proactive traffic is also insufficient, as different clients
+interested in changes may have different criteria for discarding update messages.
+
+A better approach allows client-specific {\em customization} of the update channel.  To customize a
+channel, a client provides a specification (in the form of a function) of what events it will be
+interested in. The server then uses these specifications, on a per-client basis, to determine whether or
+not to send the update event.
+
+\begin{figure}
+  \begin{centering}
+    \begin{lstlisting}
+{
+  int i, j; double sum = 0.0;
+  for (i = 0; i < MAXI; i = i + 1) {
+    for (j = 0; j < MAXJ; j = j + 1) {
+      sum = sum + input.array[i][j];  
+    }
+  }
+  output.avg_array = sum / (MAXI * MAXJ);
+  if (sum > THRESHOLD) return 1; /* submit */
+  else return 0; /* filter out */
+}
+\end{lstlisting}
+\caption{An EVpath filter function.  Such a filter would be executed in a context of the form \texttt{int
+    F( input, output )}.}
+\label{fig:filter}
+\end{centering}
+\end{figure}
+
+EVpath enables customization of update channels through a mechanism called \emph{filter stones}.  Drift
+handles the interface with EVpath, and Drift clients simply need to supply a filter function.  The filter is
+installed at \driftd and runs each time an update event is generated.  The filter function can inspect
+the message payload, transform part of it, or simply discard the message before it is sent from \driftd
+according criteria in the function.  
+
+Filters are sent by the client as functions written in a subset of C\footnote{The filter language has
+  been restricted in certain ways related to pointer manipulation and memory management for code safety
+  considerations.}, supplied as a character string in a request message to \driftd.  The filter function
+is then dynamically translated using an in-memory compiler to machine code for the target architecture
+and called directly as a C function when update messages are generated.  Figure~\ref{fig:filter} shows a
+typical filter function.  In this example, the update message (available to the function as a structure
+called \texttt{input}) contains an array of doubles, and the client is only interested in receiving the
+update message if the average of this array's values is above a certain threshold.  The filter function
+computes the average and compares against the threshold value, discarding the message if the constraint
+is not met.
+
+In this way, clients can maintain control over which updates they see for particular data, while
+preserving their ability to stay aware of all changes in other data.
+
+\subsubsection{Drift proactive elements}
+
+The following conditions in \driftd will result in the generation of an update message on the
+advertisement channel:
+
+\begin{itemize}
+\item Change to an existing index (addition or removal of an index entry)
+\item Installation or removal of an index
+\item Modification of a \dpart
+\item Updates generated by backing stores
+\item New \dpart defined
+\item New \dpart fusion defined
+\item New update channel created
+\end{itemize}
+
+Clients are free to ignore these updates as they wish, or delegate them to individual update channels for
+customization.  
+
+
+\section{\libdrift}
+
+\libdrift is a C-language-based shared object library designed to be linked into applications that wish
+to use Drift.  It contains facilities for declaring message structures, submitting request messages to
+\driftd, and subscribing to advertisement and control channels.  
+
+In this section we present several interaction diagrams that show how a user executable would use
+\libdrift to contact and make requests of \driftd, covering a set of common use cases.
+
+\begin{figure}
+  \centering{
+    \includegraphics[height=5in]{figs/establish}
+  }
+  \caption{Using \libdrift to connect to \driftd and perform initial setup.}
+\end{figure}
+
+
+\begin{figure}
+  \centering{
+    \includegraphics[height=5in]{figs/defining1}
+  }
+  \caption{Using \libdrift to define a \dpart that contains immediate data.}
+\end{figure}
+
+
+
+\begin{figure}
+  \centering{
+    \includegraphics[height=5in]{figs/defining2}
+  }
+  \caption{Using \libdrift to define a \dpart that contains external data.}
+\end{figure}
+
+
+
+\begin{figure}
+  \centering{
+    \includegraphics[height=5in]{figs/composite}
+  }
+  \caption{Using \libdrift to define a composite (fused) \dpart.}
+
+\end{figure}
+
+
+
+\begin{figure}
+  \centering{
+    \includegraphics[height=5in]{figs/partvalue}
+  }
+  \caption{Using \libdrift to retrieve the value of a \dpart.}
+\end{figure}
+
+
+
+
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "paper"
+%%% End: 
+

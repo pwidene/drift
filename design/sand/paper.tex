@@ -1,0 +1,186 @@
+%
+% $Id: SANDtemplate.tex,v 1.3 2007-12-13 21:27:14 rolf Exp $
+% A template to build SAND reports. See the examples for more details and
+% formatting suggestions. A command reference is available at
+% http://www.cs.sandia.gov/~rolf/SANDreport
+%
+\documentclass[pdf,12pt,report,strict]{SANDreport}
+\usepackage{comment}
+\usepackage{verbatim,xspace,url,graphicx,subfigure,times}
+\usepackage{listings}
+\usepackage[section]{placeins}
+\lstset{language=C++,basicstyle={\ttfamily\scriptsize},breaklines,breakatwhitespace}
+
+
+%\newcommand{\eph}{Ephemeris\xspace}
+%\newcommand{\Eph}{Ephemeris\xspace}
+
+% ---------------------------------------------------------------------------- %
+% Set the title, author, and date
+%
+    \title{Flexible and Scalable Data Fusion using Proactive, Schemaless Information Services}
+    \author{Patrick M. Widener\\Scalable System Software Department\\Sandia National
+      Laboratories\\P.O. Box 5800\\Albuquerque, NM 87185-1319}		% Use First, Middle, Initial
+    \date{}		% Leave this here but empty
+
+
+% ---------------------------------------------------------------------------- %
+% These are mandatory
+%
+\SANDnum{SAND2014-16250}		% e.g. \SANDnum{SAND2006-0420}
+\SANDprintDate{June 2014}	% Month, year
+\SANDauthor{Patrick M. Widener}		% One line, separated by commas
+
+
+% ---------------------------------------------------------------------------- %
+% These are optional
+%
+%\SANDrePrintDate{}	% May be repeated for successive printings
+%\SANDsupersed{}{}	% {Old SAND number}{Old date}
+
+
+% ---------------------------------------------------------------------------- %
+% Build your markings. See example files and SAND Report Guide
+%
+    %\SANDreleaseType{}
+    %\SANDmarkTopBottomCoverBackTitle{}
+    %\SANDmarkBottomCover{}
+    %\SANDmarkTopBottomCoverTitle{}
+    %\SANDmarkTop{}
+    %\SANDmarkBottom{}
+    %\SANDmarkTopBottom{}
+    %\SANDmarkCover{}
+    %\SANDmarkCoverTitle{}
+
+
+% ---------------------------------------------------------------------------- %
+% Start the document
+%
+\begin{document}
+    \maketitle
+
+    % ------------------------------------------------------------------------ %
+    % An Abstract is required for SAND reports
+    %
+    \begin{abstract}
+Exascale data environments are fast approaching, driven by diverse structured and unstructured data such
+as system and application telemetry streams, open-source information capture, and on-demand simulation
+output. Storage costs having plummeted, the question is now one of converting vast stores of data to
+actionable information. Complicating this problem are the low degrees of awareness across domain
+boundaries about what potentially useful data may exist, and write-once-read-never issues (data
+generation/collection rates outpacing data analysis and integration rates). Increasingly, technologists
+and researchers need to correlate previously unrelated data sources and artifacts to produce fused data
+views for domain-specific purposes. New tools and approaches for creating such views from vast amounts of
+data are vitally important to maintaining research and operational momentum. We propose to research and develop tools and services to assist in the creation, refinement, discovery and reuse of fused data views over large, diverse collections of heterogeneously structured data. We innovate in the following ways. First, we enable and encourage end-users to introduce customized index methods selected for local benefit rather than for global interaction (flexible multi-indexing). We envision rich combinations of such views on application data: views that span backing stores with different semantics, that introduce analytic methods of indexing, and that define multiple views on individual data items. We specifically decline to “build a big fused database of everything” providing a centralized index over all data, or to export a rigid schema to all comers as in federated query approaches. Second, we proactively advertise these application-specific views so that they may be programmatically reused and extended (data proactivity). Through this mechanism, both changes in state (new data in existing view collected) and changes in structure (new or derived view exists) are made known. Lastly, we embrace “found data heterogeneity” by coupling multi-indexing to backing stores with appropriate semantics (as opposed to a single store or schema).
+     \end{abstract}
+
+
+    % ------------------------------------------------------------------------ %
+    % An Acknowledgment section is optional but important
+    %
+    \clearpage
+    \chapter*{Acknowledgments}
+This work was funded under LDRD Project Number 164869 and Title ``Flexible and Scalable Data Fusion using
+Proactive, Schemaless Information Services''.
+
+The following individuals have given me valuable feedback and assistance during the project documented by
+this report: Travis Bauer, Ann Campbell, Warren Davis, Bill Hart, Thomas Kroeger, and Judy Spomer.
+
+    % ------------------------------------------------------------------------ %
+    % The table of contents and list of figures and tables
+    %
+    \cleardoublepage		% TOC needs to start on an odd page
+    \tableofcontents
+    \listoffigures
+    \listoftables
+
+\begin{comment}
+    % ---------------------------------------------------------------------- %
+    % An optional preface or Foreword
+    \clearpage
+    \chapter*{Preface}
+    \addcontentsline{toc}{chapter}{Preface}
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional executive summary
+    \clearpage
+    \chapter*{Summary}
+    \addcontentsline{toc}{chapter}{Summary}
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional glossary. We don't want it to be numbered
+    \clearpage
+    \chapter*{Nomenclature}
+    \addcontentsline{toc}{chapter}{Nomenclature}
+    \begin{description}
+	\item[Term 1]
+	    Description
+	\item[Term 2]
+	    Description
+	\item[Term 3]
+	    Description
+    \end{description}
+\end{comment}
+
+    % ---------------------------------------------------------------------- %
+    % This is where the body of the report begins; usually with an Introduction
+    %
+    \SANDmain		% Start the main part of the report
+
+    \input{intro}
+    \input{drift}
+    \input{ephemeris}
+    \input{outro}
+
+
+    % ---------------------------------------------------------------------- %
+    % References
+    %
+    \clearpage
+    % If hyperref is included, then \phantomsection is already defined.
+    % If not, we need to define it.
+    \providecommand*{\phantomsection}{}
+    \phantomsection
+    \addcontentsline{toc}{chapter}{References}
+    \bibliographystyle{plain}
+    \bibliography{refs}
+
+
+    % ---------------------------------------------------------------------- %
+    %
+    \appendix
+    \input{appendix}
+
+    % \printindex
+
+    \begin{SANDdistribution}[NM]% or [CA]
+	% \SANDdistCRADA	% If this report is about CRADA work
+	% \SANDdistPatent	% If this report has a Patent Caution or Patent Interest
+      \SANDdistLDRD	% If this report is about LDRD work
+
+	% External Address Format: {num copies}{Address}
+	\SANDdistExternal{}{}
+	\bigskip
+
+	% The following MUST BE between the external and internal distributions!
+	% \SANDdistClassified % If this report is classified
+
+	% Internal Address Format: {num copies}{Mail stop}{Name}{Org}
+	\SANDdistInternal{1}{1319}{Patrick M. Widener}{1423}
+
+	% Mail Channel Address Format: {num copies}{Mail Channel}{Name}{Org}
+	%\SANDdistInternalM{}{}{}{}
+    \end{SANDdistribution}
+
+
+    % The second printing
+    %\begin{SANDreDistribution}
+    %    \SANDdistExternal{}{}
+    %    \bigskip
+    %    \SANDdistInternal{}{}{}{}
+    %    \SANDdistInternalM{}{}{}{}
+    %\end{SANDreDistribution}
+
+\end{document}

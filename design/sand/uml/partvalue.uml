@@ -1,0 +1,51 @@
+@startuml partvalue.png
+title Retrieve Part value
+
+actor User
+participant "libdrift" as A
+
+box "driftd service" #LightBlue
+
+participant "Advertisement channel" as B
+participant "Control channel" as C
+participant "driftd" as D
+end box
+
+participant "Neo4j" as N
+participant "MongoDB" as M
+
+
+User ->> A: get Part value
+A ->> C : send retrieval message
+note left
+     Retrieval message contains
+     index specifier
+     index value
+end note    
+
+A -> User : ACK
+C -> D : get Part value
+
+D -> D : Lookup Part UUID in index
+
+D -> N : Get Part info
+
+alt Composite Part
+
+loop foreach Part
+D -> N: Get Part metadata with UUID
+D -> M : Get Part values
+end
+
+else Simple Part
+D -> N: Get Part metadata with UUID
+D -> M : Get Part values
+end
+
+D -> D: build update message
+D ->> B : Update messages for Part values
+
+B ->> User : receive update message
+
+@enduml
+

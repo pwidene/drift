@@ -1,0 +1,41 @@
+@startuml defining2.png
+title Define Part (external data)
+
+actor User
+participant "libdrift" as A
+
+box "driftd service" #LightBlue
+
+participant "Advertisement channel" as B
+participant "Control channel" as C
+participant "driftd" as D
+end box
+
+participant "Neo4j" as N
+participant "MongoDB" as M
+
+
+User ->> A: define Part
+A ->> C : send definition message
+note left
+     Part definition message contains
+     index specifier
+     index value
+     Part metadata
+     Part value
+end note    
+
+A -> User : ACK
+C -> D : define Part
+
+D -> D : Create UUID
+D -> D : Insert into index
+D -> N : Store UUID
+D -> M : Store UUID, Part metadata
+
+D ->> B : Update messages for index, Part value
+
+B ->> User : receive update message
+
+@enduml
+

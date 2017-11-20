@@ -1,0 +1,38 @@
+@startuml defining1.png
+title Define Part (immediate data)
+
+actor User
+participant "libdrift" as A
+
+box "driftd service" #LightBlue
+
+participant "Advertisement channel" as B
+participant "Control channel" as C
+participant "driftd" as D
+end box
+
+participant "Neo4j" as N
+
+
+User ->> A: define Part
+A ->> C : send definition message
+note left
+     Part definition message contains
+     index specifier
+     index value
+     Part value
+end note    
+
+A -> User : ACK
+C -> D : define Part
+
+D -> D : Create UUID
+D -> D : Insert into index
+D -> N : Store UUID, Part value
+
+D ->> B : Update messages for index, Part value
+
+B ->> User : receive update message
+
+@enduml
+

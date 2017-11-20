@@ -1,0 +1,11 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces An example dataflow network that can be implemented using EVpath.}}{16}
+\contentsline {figure}{\numberline {2}{\ignorespaces A customized dataflow network that can be implemented with EVpath.}}{16}
+\contentsline {figure}{\numberline {3}{\ignorespaces An example of a prefix tree.}}{21}
+\contentsline {figure}{\numberline {4}{\ignorespaces Visualization of data layout in an R-tree.}}{22}
+\contentsline {figure}{\numberline {5}{\ignorespaces An EVpath filter function. Such a filter would be executed in a context of the form \texttt {int F( input, output )}.}}{25}
+\contentsline {figure}{\numberline {6}{\ignorespaces Using \texttt {libdrift}\xspace to connect to \texttt {driftd}\xspace and perform initial setup.}}{27}
+\contentsline {figure}{\numberline {7}{\ignorespaces Using \texttt {libdrift}\xspace to define a \texttt {Part}\xspace that contains immediate data.}}{28}
+\contentsline {figure}{\numberline {8}{\ignorespaces Using \texttt {libdrift}\xspace to define a \texttt {Part}\xspace that contains external data.}}{29}
+\contentsline {figure}{\numberline {9}{\ignorespaces Using \texttt {libdrift}\xspace to define a composite (fused) \texttt {Part}\xspace .}}{30}
+\contentsline {figure}{\numberline {10}{\ignorespaces Using \texttt {libdrift}\xspace to retrieve the value of a \texttt {Part}\xspace .}}{31}
+\contentsline {figure}{\numberline {11}{\ignorespaces Depiction of system-level relationship between Drift, the ESB, and other ESB services.}}{33}

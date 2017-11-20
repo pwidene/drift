@@ -1,0 +1,27 @@
+\contentsline {section}{Introduction and Background}{11}
+\contentsline {subsection}{Background and approach}{11}
+\contentsline {subsection}{Use Cases}{13}
+\contentsline {section}{The Drift Service}{14}
+\contentsline {section}{\texttt {driftd}\xspace }{14}
+\contentsline {subsection}{Publish/subscribe messaging}{15}
+\contentsline {subsubsection}{EVpath middleware}{15}
+\contentsline {subsubsection}{Constructing messages}{17}
+\contentsline {subsubsection}{Processing messages in \texttt {driftd}\xspace }{18}
+\contentsline {subsection}{Data Fusion, Relationship Management, and the Parts List}{18}
+\contentsline {subsubsection}{How \texttt {Part}s\xspace operate}{18}
+\contentsline {subsubsection}{Data storage}{19}
+\contentsline {subsubsection}{Relationship management}{19}
+\contentsline {subsection}{Flexible Analytic Indexing}{20}
+\contentsline {subsubsection}{Prefix trie}{21}
+\contentsline {subsubsection}{R-tree and kd-tree}{21}
+\contentsline {subsubsection}{Discussion}{22}
+\contentsline {subsection}{Proactivity}{23}
+\contentsline {subsubsection}{Rationale}{23}
+\contentsline {subsubsection}{Preserving client control of updates}{24}
+\contentsline {subsubsection}{Drift proactive elements}{25}
+\contentsline {section}{\texttt {libdrift}\xspace }{26}
+\contentsline {section}{Extending Drift for enterprise use}{32}
+\contentsline {subsection}{Enterprise Data Fusion Services}{32}
+\contentsline {section}{Conclusion}{34}
+\contentsline {chapter}{References}{35}
+\subsection *{Appendix}

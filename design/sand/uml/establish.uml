@@ -1,0 +1,40 @@
+@startuml establish.png
+title Establish service connection
+
+actor User
+participant "libdrift" as A
+
+box "driftd service" #LightBlue
+
+participant "Advertisement channel" as B
+participant "Control channel" as C
+participant "driftd" as D
+end box
+
+== driftd initialization ==
+
+activate D
+D -> D : initialize
+
+create B
+D -> B : establish
+activate B
+
+create C
+D -> C : establish
+activate C
+
+== libdrift contact ==
+
+User ->> A: initialize
+activate A
+
+A ->> B: subscribe
+
+B -> D: new client
+B ->> A: heartbeat w/ control channel info
+
+A ->> C: requests
+
+@enduml
+

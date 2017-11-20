@@ -1,0 +1,124 @@
+\begin{thebibliography}{10}
+
+\bibitem{sparql}
+{SPARQL Federated Query}.
+\newblock \url{http://www.w3.org/TR/sparql11-federated-query/}.
+
+\bibitem{splunk}
+Splunk.
+\newblock \url{http://www.splunk.com}.
+
+\bibitem{bentley80:_multid}
+J.L. Bentley.
+\newblock Multidimensional divide and conquer.
+\newblock {\em Communications of the {ACM}}, 23(4):214--229, 1980.
+
+\bibitem{bleiholder09:_data}
+Jens Bleiholder and Felix Naumann.
+\newblock Data fusion.
+\newblock {\em {ACM Comput. Surv.}}, 41(1), January 2009.
+\newblock Article 1.
+
+\bibitem{boost_c_librar_spatial_index}
+Boost.org.
+\newblock {Boost C++ Libraries \textemdash Spatial Indexes}.
+\newblock
+  \url{http://www.boost.org/doc/libs/1_55_0/libs/geometry/doc/html/geometry/spatial_indexes.html}.
+\newblock Retrieved May 2014.
+
+\bibitem{briandais59:_file}
+Rene De~La Briandais.
+\newblock File searching using variable length keys.
+\newblock In {\em Proc. Western Joint Computer Conference}, pages 295--298.
+  {IRE-AIEE-ACM}, ACM, March 1959.
+
+\bibitem{bustamante02:_scalab_direc_servic_using_proac}
+Fabian Bustamante, Patrick Widener, and Karsten Schwan.
+\newblock Scalable directory services using proactivity.
+\newblock In {\em Proc. IEEE/ACM Supercomputing}, Baltimore, Maryland, November
+  2002.
+
+\bibitem{Chang06bigtable:a}
+Fay Chang, Jeffrey Dean, Sanjay Ghemawat, Wilson~C. Hsieh, Deborah~A. Wallach,
+  Mike Burrows, Tushar Chandra, Andrew Fikes, and Robert~E. Gruber.
+\newblock Bigtable: A distributed storage system for structured data.
+\newblock In {\em Proc. 7th USENIX Symposium on Operating Systems Design and
+  Implementation (OSDI)}, pages 205--218, 2006.
+
+\bibitem{eisenhauer09:_event}
+Greg Eisenhauer, Hasan Abbasi, Matthew Wolf, and Karsten Schwan.
+\newblock Event-based systems: opportunities and challenges at exascale.
+\newblock In {\em {Proc. Third ACM International Conference on Distributed
+  Event-Based Systems}}, Nashville, Tennessee, July 2009. {ACM}.
+
+\bibitem{eisenhauer11:FFS}
+Greg Eisenhauer, Matthew Wolf, Hasan Abbasi, Scott Klasky, and Karsten Schwan.
+\newblock A type system for high performance communication and computation.
+\newblock In {\em Proc. 2011 D\textsuperscript{3}science Workshop}, Stockholm,
+  Sweden, December 2011. {IEEE}.
+\newblock {Associated with the 7th IEEE International Conference on e-Science}.
+
+\bibitem{busse99:_feder_infor_system}
+Susanne~Busse et~al.
+\newblock {\em Federated Information Systems: Concepts, Terminology, and
+  Architectures}.
+\newblock Technische Universit\"{a}t Berlin, 1999.
+
+\bibitem{govdocs1}
+Simon Garfunkel, Paul Farrell, Vassil Roussev, and George Dinolt.
+\newblock Bringing science to digital forensics with standardized forensic
+  corpora.
+\newblock In {\em Proc. Digital Forensic Research Workshop}, Montreal, Canada,
+  2009. Elsevier.
+
+\bibitem{gutman84:_r}
+Antonin Gutman.
+\newblock R-trees: a dynamic index structure for spatial searching.
+\newblock In {\em Proc. ACM SIGMOD International Conference on Management of
+  Data}, page~47. ACM, 1984.
+
+\bibitem{Hastorun07dynamo:amazons}
+Deniz Hastorun, Madan Jampani, Gunavardhan Kakulapati, Alex Pilchin,
+  Swaminathan Sivasubramanian, Peter Vosshall, and Werner Vogels.
+\newblock Dynamo: Amazon's highly available key-value store.
+\newblock In {\em Proc. ACM Symposium on Operating System Principles (SOSP)},
+  pages 205--220, 2007.
+
+\bibitem{krafft}
+Martin~F. Krafft, Paul Harris, and Sylvain Bougerel.
+\newblock {libkdtree++}.
+\newblock \url{libkdtree.alioth.debian.org}.
+\newblock Retrieved May 2014.
+
+\bibitem{papazoglou03:_servic}
+{M.P. Papazoglou}.
+\newblock Service-oriented computing: concepts, characteristics, and
+  directions.
+\newblock {\em Proc. Web Information Systems Engineering}, Dec 2003.
+
+\bibitem{mule-esb}
+{MuleSoft}.
+\newblock {Mule ESB}.
+\newblock \url{http://www.mulesoft.com/platform/soa/mule-esb-open-source-esb}.
+
+\bibitem{beckmann90:_r}
+{Norbert Beckmann and Hans-Peter Knegel and Ralf Schneider and Bernhard
+  Seeger}.
+\newblock {The R*-tree: an efficient and robust access method for points and
+  rectangles}.
+\newblock In {\em Proc. ACM SIGMOD International Conference on Management of
+  Data}, page 322. ACM, 1990.
+
+\bibitem{sheth90:_feder}
+Amit~P. Sheth and James~A. Larson.
+\newblock Federated database systems for managing distributed, heterogeneous,
+  and autonomous databases.
+\newblock {\em {ACM Comput. Surv.}}, 22(3):183--236, September 1990.
+
+\bibitem{enterprise14:_patric_m}
+Patrick~M. Widener.
+\newblock Data fusion as an enterprise service.
+\newblock In {\em {Proc. 11th IEEE International Conference on Services
+  Computing}}, Anchorage, Alaska, June 2014. IEEE.
+
+\end{thebibliography}

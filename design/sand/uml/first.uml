@@ -1,0 +1,25 @@
+@startuml
+actor User
+participant "libdrift" as A
+participant "driftd" as B
+
+User -> A: initialize
+activate A
+
+A -> B: open_channel
+
+B -> A: channel_identifier
+
+A -> User
+
+User -> A: subscribe
+
+A -> B: subscribe with channel_id
+
+B -> A: handle
+
+A -> User: handle
+
+deactivate A
+
+@enduml

@@ -1,0 +1,147 @@
+\section{Introduction and Background}
+
+This report discusses the background, design, and implementation of a software service, Drift, designed to
+support \emph{data fusion}.  We use the term to mean the ability to treat distinct, possibly
+heterogeneous, pieces of data as a single entity, for the purposes of identification, manipulation, and
+analysis.  We address a universe of structured and semi-structured data, from scientific experimental and
+simulation results and inputs about which almost all possible metadata is known to word-processor and
+spreadsheet documents whose provenance is unclear.  
+
+Indeed, this disparity in metadata availability in large part motivates this project.  An abstract data
+type (ADT) is a idiom directly supported by object-oriented programming languages, in which developers
+are encouraged to map the intellectual process of data-driven design from the top (i.e. the ``real
+world'') down, as opposed to trying to think in detail about varied collections of primitive data types.
+Drift represents an exploration of applying this principle at a higher level.  Fast networks, cheap
+near-line storage, and the emergence of ``big data'' problems have led engineers and
+scientists to develop data-centric design and problem-solving processes.  These processes incorporate many different kinds
+of data produced by different methods, with varying degrees of attached metadata, and with lifetimes
+exceeding typical project durations or even employee tenures.  
+
+Drift explores the possibility of forming abstractions around data that has no previous explicit
+interrelationships.  We see much of the potential usefulness of a service such as Drift in assisting
+users to make explicit relationships between data that were previously part of shared understanding, 
+cultural assumptions, or hand-me-down knowledge among developers, or artificially separated by
+administrative or other boundaries.  Making these relationships 
+explicit and available has the potential to reduce misconceptions about how data in organizations is
+used.  
+
+Although making it easier to define such abstractions, to fuse data, is a key goal of Drift, it is also
+an enabling step for data analysis.  Assigning names to fused data objects is one way to reference them,
+but applying analytic techniques to that naming process promises interesting benefits.  In particular,
+using components of the fused data itself to drive indexing schemes that support automated learning and
+categorization can provide important leverage for queries and data mining-style operations.  In this
+Drift is designed to support making fused data objects into ``first-class'' entities for the purposes of
+data mining and analysis, to be operated on using analytic methods in the same way as primitive data
+types are in current usage.
+
+
+\subsection{Background and approach}
+
+The database research community was among the first to address problems of data fusion, exploring
+approaches such as revised relational algebras and SQL optimization\cite{bleiholder09:_data}. Large-scale availability of
+distributed system middleware later drove investigations into federated database and query
+services\cite{busse99:_feder_infor_system,sheth90:_feder} in 3-tier enterprise application architectures,
+and this flavor of data fusion has persisted through an evolution to service-oriented
+architectures\cite{papazoglou03:_servic}.
+
+Drift is intended to improve the availability and utility of federated query-style data services for
+researchers in large-data environments comprising multiple heterogeneous sources by making it easier for
+them to construct views on distributed data that are meaningful to them. Drift embodies a proposition
+that significant expressive power can be obtained by connecting application-specific views to fused and
+discrete data sources (flexible multi-indexing), and that tools and software systems that directly
+support this will prove useful. Drift's design further assumes that, given such tools and systems,
+facilities that provide push-based notification of changes in those views and that can be integrated
+directly into applications and data (data proactivity) will also prove useful.
+
+Our method of defining and advertising views on distributed data is more flexible than traditional
+federated query approaches in that it encourages a “bottom-up” approach where multiple, perhaps
+inconsistent views on the same data are possible. Rather than finding ways to limit the proliferation of
+these views, Drift makes them reusable and extensible. Drift also aims to reintroduce distributed query
+capabilities for data other than semantically organized text, as much recent research has emphasized
+federated text search\cite{sparql}. In contrast to existing data mining/analysis tools such as
+Splunk\cite{splunk}, Drift provides programmatic solutions compatible with extremely high-throughput
+streaming data environments where indexing, analysis and shaping of metadata and data must be performed
+\emph{in situ}, and where advanced analytic indexing capabilities can be introduced directly by scientists and
+researchers.
+
+
+By implementing flexible multi-indexing, Drift enables users to define their own customized views for the
+metadata they are concerned with, and directly embed these structures into a metadata service. While
+defining indexing structures is a fairly straightforward (and obviously useful) operation for commonly
+used hierarchical naming structures such as tries, we believe that more novel results will come from the
+use of analytic data structures for indexing. 
+
+For example, as high-dimensional, “big-data” scenarios become commonplace, and in a dynamic metadata
+environment such as that we envision, kd-trees\cite{bentley80:_multid} whose dimensional components can
+be customized by end-users have the potential to provide extremely granular data selection while still
+maintaining efficient indexing. Another example is the use of a kd-tree to implement a nearest-neighbor
+search, which can for example complement the automatic classification tasks in the Cyber domain. Of
+particular interest are scenarios where metadata objects (potentially comprising multiple objects
+spanning multiple backing data stores) can be indexed by more than one user-defined index structure (for
+example, consider a feature set generated by computational simulation, indexed both hierarchically by a
+trie and by an N- dimensional hyperplane through the feature set).
+
+Users wishing to construct a new fused data product through the use of multiple indexes may wish to know
+if related data products are already available so that those products might be reused or extended. Drift
+provides a publish/subscribe-like model where entities interested in changes in the data represented in a
+service, or changes in the structure of the service itself (addition of new indexes, for example), can be
+proactively notified rather than having to interrogate the service.  This style of state management
+provides an asynchronous, eventually-consistent global picture of the available views defined by all
+users, which is both necessary to enable discovery and encourage reuse, and more flexible and scalable
+than federated query approaches enforcing stricter consistency semantics. We also expect proactivity to
+provide direct benefits to users, allowing coupling between computational or sensor-based
+results. Consider for example the advertisement of a fused data product that must await a cooperating
+computation to be completed, or the establishment of a condition driven by asynchronous external
+phenomena (such as a malicious network attack detected by a stateful firewall). Proactive interfaces can
+also complement the trigger- or change-based mechanisms already available in the backing stores Drift
+uses.
+
+Drift uses flexible and scalable schemaless data stores to store and make available
+heterogeneously-structured and unstructured data. These tools have been studied in detail at Sandia and
+elsewhere, and Drift does not innovate in their design or construction. There are several flavors of
+these stores, each representing a particular choice of trade-offs: key-value (Amazon
+Dynamo\cite{Hastorun07dynamo:amazons} and descendants), column-oriented (e.g. Google
+BigTable\cite{Chang06bigtable:a}, Apache Cassandra), document-oriented (e.g. Couch, Mongo), and
+graph/RDF/adjacency (e.g. Neo4j, Allegro). Drift uses this diversity of data representation to more
+effectively cope with the variety of data and metadata we expect to encounter.
+
+More interestingly, Drift extends traditional federated-query-style data management by providing the
+ability to construct logical views over physical data residing in multiple such stores, leveraging the
+unique benefits of each. For example, the best method for representing relationships between documents
+might be a graph database, but it could prove useful to associate that relationship with sets of
+experimental results residing in a column-store. Lastly, being able to incorporate tools like HBase
+(thereby coupling map-reduce computations) enables a further degree of richness in data view definition.
+
+\subsection{Use Cases}
+
+Issues raised in the following use cases motivate our work:
+
+\begin{enumerate}
+\item Long-running engineering efforts accumulate vast stores of different but equally important data
+  over time as artifacts of design, testing, and production.  Design documents include reports,
+  schematics, spreadsheets, emails, and other notes; these are typically produced by and manipulated with
+  commercial office productivity software such as Microsoft Office.  Testing data adds to this large
+  amounts of numerical results, test descriptions, and parameter sets.  Production data adds another type
+  of data store to the problem, as database management software is frequently used to maintain inventory
+  information.  When problems are detected during testing or production use, answering the questions that
+  lead to root causes requires a holistic look back at a large and interrelated data space: What testing
+  regime was used for the widget in question?  was its design valid?  how many of these widgets are in
+  production?  Combining different heterogeneous data in the right ways can quickly illuminate these
+  issues.
+
+\item Certain corporate data must be mined for features which are relevant to ongoing operations.  For
+  instance, streaming telemetry collection from internal cloud deployments can pose issues deriving from
+  all four of the ``V's'' of big data: volume, velocity, variety, and veracity.  This telemetry can
+  include system health and performance monitoring as well as application data streams.  Fusing these
+  data streams to support enterprise decision-making is an important capability (consider, for example,
+  an internal cloud-based ``honeypot'' used to isolate, diagnose, and respond to cybersecurity attacks in
+  near-real-time).
+\end{enumerate}
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "paper"
+%%% End: 
+

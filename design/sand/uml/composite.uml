@@ -1,0 +1,46 @@
+@startuml composite.png
+title Define Part (external data)
+
+actor User
+participant "libdrift" as A
+
+box "driftd service" #LightBlue
+
+participant "Advertisement channel" as B
+participant "Control channel" as C
+participant "driftd" as D
+end box
+
+participant "Neo4j" as N
+participant "MongoDB" as M
+
+
+User ->> A: define Part
+A ->> C : send definition message
+note left
+     Composite Part definition message contains a list of
+     index specifier
+     index value
+     Part metadata
+     Part value
+end note    
+
+A -> User : ACK
+C -> D : define composite Part
+
+D -> D : Create composite Part UUID
+D -> D : Insert into index
+
+loop foreach Part
+D -> D : Create Part UUID
+D -> N : Store UUID
+D -> N : Store Composite UUID / Part UUID relationship
+D -> M : Store UUID, Part metadata
+end
+
+D ->> B : Update messages for index, Part values
+
+B ->> User : receive update message
+
+@enduml
+
